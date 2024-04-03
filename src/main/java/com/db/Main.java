@@ -1,4 +1,4 @@
-package com.guc;
+package com.db;
 
 public class Main {
     public static String getName() {

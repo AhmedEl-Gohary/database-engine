@@ -1,4 +1,4 @@
-package com.guc;
+package com.db;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
