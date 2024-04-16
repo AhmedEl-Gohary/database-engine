@@ -1,8 +1,6 @@
 package com.db;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Properties;
@@ -29,6 +27,18 @@ public class DBApp {
         Page.iMaxRowsCount = Integer.parseInt(p.getProperty("MaximumRowsCountinPage"));
     }
 
+    public static void fnSerialize(Object oToBeSerialized, String strFileName) {
+        try  {
+            FileOutputStream file = new FileOutputStream(strFileName);
+            ObjectOutputStream out = new ObjectOutputStream(file);
+            out.writeObject(oToBeSerialized);
+            out.close();
+            file.close();
+        }  catch(IOException ex) {
+            System.out.println("IOException is caught");
+        }
+    }
+
 
     // following method creates one table only
     // strClusteringKeyColumn is the name of the column that will be the primary
@@ -36,11 +46,9 @@ public class DBApp {
     // be passed in htblColNameType
     // htblColNameValue will have the column name as key and the data
     // type as value
-    public void createTable(String strTableName,
-                            String strClusteringKeyColumn,
-                            Hashtable<String,String> htblColNameType) throws DBAppException{
-
-        throw new DBAppException("not implemented yet");
+    public void createTable(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException{
+        Table tableCreateTable = new Table(strTableName, strClusteringKeyColumn, htblColNameType);
+        fnSerialize(tableCreateTable, strTableName + ".ser");
     }
 
 
