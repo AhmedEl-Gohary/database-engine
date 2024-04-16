@@ -34,9 +34,9 @@ public class DBApp {
 
 
     // following method creates a B+tree index
-    public void createIndex(String   strTableName,
-                            String   strColName,
-                            String   strIndexName) throws DBAppException{
+    public void createIndex(String strTableName,
+                            String strColName,
+                            String strIndexName) throws DBAppException{
 
         throw new DBAppException("not implemented yet");
     }
@@ -45,7 +45,7 @@ public class DBApp {
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName,
-                                Hashtable<String,Object>  htblColNameValue) throws DBAppException{
+                                Hashtable<String,Object> htblColNameValue) throws DBAppException{
 
         throw new DBAppException("not implemented yet");
     }
