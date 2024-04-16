@@ -1,21 +1,32 @@
 package com.db;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Hashtable;
+import java.util.Properties;
 
 
 public class DBApp {
 
     public DBApp() {
-
+        init();
     }
 
     // this does whatever initialization you would like
     // or leave it empty if there is no code you want to
     // execute at application startup
     public void init( ){
-
-
+        String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+        String appConfigPath = rootPath + "DBApp.config";
+        Properties p = new Properties();
+        try {
+            p.load(new FileInputStream(appConfigPath));
+        }catch (IOException e){
+            System.out.println(e.getMessage());
+        }
+        Page.iMaxRowsCount = Integer.parseInt(p.getProperty("MaximumRowsCountinPage"));
     }
 
 
