@@ -6,6 +6,9 @@ import java.util.*;
 
 public class DBApp {
 
+    static String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+    static String file = rootPath + "metadata.csv";
+
     public DBApp() {
         init();
     }
@@ -65,7 +68,7 @@ public class DBApp {
         }catch (IOException e){
             System.out.println(e.getMessage());
         }
-        Page.iMaxRowsCount = Integer.parseInt(p.getProperty("MaximumRowsCountingPage"));
+        Page.iMaxRowsCount = Integer.parseInt(p.getProperty("MaximumRowsCountinPage"));
     }
 
 
@@ -84,9 +87,7 @@ public class DBApp {
 
 
     // following method creates a B+tree index
-    public void createIndex(String strTableName,
-                            String strColName,
-                            String strIndexName) throws DBAppException{
+    public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException {
 
         throw new DBAppException("not implemented yet");
     }
@@ -94,9 +95,8 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName,
-                                Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        //TODO update the index part if exists
+    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+        // TODO update the index part if exists
         Table tableInstance = (Table) fnDeserialize(strTableName);
         tableInstance.fnInsertEntry(htblColNameValue);
         fnSerialize(tableInstance, strTableName);
@@ -107,9 +107,7 @@ public class DBApp {
     // htblColNameValue holds the key and new value
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
-    public void updateTable(String strTableName,
-                            String strClusteringKeyValue,
-                            Hashtable<String,Object> htblColNameValue   )  throws DBAppException{
+    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)  throws DBAppException{
 
         throw new DBAppException("not implemented yet");
     }
@@ -119,15 +117,18 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName,
-                                Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
 
         throw new DBAppException("not implemented yet");
     }
 
+    public Iterator processQuery(SQLTerm sqlTerm) {
+        
+        return null;
+    }
 
-    public Iterator selectFromTable(SQLTerm[] arrSQLTerms,
-                                    String[]  strarrOperators) throws DBAppException{
+
+    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[]  strarrOperators) throws DBAppException{
 
         return null;
     }

@@ -51,7 +51,7 @@ public class Page implements Serializable {
             return null;
         }
         else {
-            throw new DBAppException("cannot insert duplicates");
+            throw new DBAppException("Cannot insert duplicates");
         }
     }
 }

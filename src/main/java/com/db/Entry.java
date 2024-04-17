@@ -33,6 +33,10 @@ public class Entry implements Serializable, Comparable<Entry>{
         return htblTuple;
     }
 
+    public Object getColumnValue(String strColName) {
+        return htblTuple.get(strColName);
+    }
+
     public void setHtblTuple(Hashtable<String, Object> htblColNameValue) {
         for(String strColName: htblColNameValue.keySet()){
             Object oValue = htblColNameValue.get(strColName);
