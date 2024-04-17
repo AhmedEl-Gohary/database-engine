@@ -83,6 +83,7 @@ public class DBApp {
             throw new DBAppException("This table already exists!");
         Table tableInstance = new Table(strTableName, strClusteringKeyColumn, htblColNameType);
         fnSerialize(tableInstance, strTableName);
+        fnInsertTableMetaData(strTableName, strClusteringKeyColumn, htblColNameType);
     }
 
 
@@ -123,7 +124,7 @@ public class DBApp {
     }
 
     public Iterator processQuery(SQLTerm sqlTerm) {
-        
+
         return null;
     }
 
@@ -133,8 +134,114 @@ public class DBApp {
         return null;
     }
 
+    private static void removeTable(String strTableName) {
+        Table table = (Table) fnDeserialize(strTableName);
+        for (String page : table.vecPages) {
+            File file = new File(page + ".class");
+            file.delete();
+        }
+        deleteTableMetaData(strTableName);
+        File file = new File(strTableName + ".class");
+        file.delete();
+    }
+
+    public static boolean fnSearchMetaData(String strTableName) {
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String line;
+            while ((line = brReader.readLine()) != null) {
+                String[] elements = line.split(",");
+                if (elements[0].equals(strTableName)) {
+                    return true;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
+    }
+
+    public static void fnInsertTableMetaData(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException {
+        if (fnSearchMetaData(strTableName)) {
+            throw new DBAppException("Table data is already inserted");
+        }
+        // Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType
+        try {
+            FileWriter writer = new FileWriter(DBApp.file, true); // Append mode (optional)
+
+            for (String strColName : htblColNameType.keySet()) {
+                writer.write(fnMakeRow(strTableName, strColName.equals(strClusteringKeyColumn), strColName,
+                        htblColNameType.get(strColName)) + "\n");
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String fnMakeRow(String strTableName, boolean bIsClusteringKey, String strColName, String strType) {
+        String[] row = new String[6];
+        row[0] = strTableName;
+        row[1] = strColName;
+        row[2] = strType;
+        row[3] = "" + bIsClusteringKey;
+        row[4] = row[5] = "null";
+        return String.join(",");
+    }
+
+    public static void deleteTableMetaData(String strTableName) {
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String line;
+            Vector<String> data = new Vector<>();
+            while ((line = brReader.readLine()) != null) {
+                String[] elements = line.split(",");
+                if (!elements[0].equals(strTableName)) {
+                    data.add(line);
+                }
+            }
+            FileWriter writer = new FileWriter(DBApp.file, false);
+            for (String record: data){
+                writer.write(record + '\n');
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static void updateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String line;
+            Vector<String> data = new Vector<>();
+            while ((line = brReader.readLine()) != null) {
+                String[] elements = line.split(",");
+                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
+                    if(!elements[3].equals("null")) {
+                        throw new DBAppException("Index " + elements[3] + " already exists!");
+                    }
+                    elements[3] = strIndexName;
+                }
+                data.add(String.join(",", elements));
+            }
+            FileWriter writer = new FileWriter(DBApp.file, false);
+            for (String record: data){
+                writer.write(record + '\n');
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     public static void main( String[] args ) throws DBAppException {
+
         String strTableName = "Student";
         Hashtable htblColNameType = new Hashtable( );
         htblColNameType.put("id", "java.lang.Integer");
@@ -144,7 +251,7 @@ public class DBApp {
             DBApp dbApp = new DBApp();
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
-            for(int i=0;i<5;i++){
+            for(int i=0;i<20;i++){
                 Random r = new Random();
                 Hashtable<String,Object> ht = new Hashtable<>();
                 int id ;
@@ -156,11 +263,14 @@ public class DBApp {
                 dbApp.insertIntoTable(strTableName,ht);
             }
             Table tableInstance = (Table)fnDeserialize("Student");
-            for(String page:tableInstance.vecPages){
+            for(int i = 0; i < tableInstance.fnCountPages(); i++){
+                System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
+                System.out.println("min: " +  tableInstance.vecMin.get(i));
+                String page = tableInstance.vecPages.get(i);
                 Page pageInstance = (Page)fnDeserialize(page);
                 System.out.println(pageInstance);
             }
-
+            removeTable("Student");
 
         } catch (DBAppException e) {
             System.out.println(e.getMessage());

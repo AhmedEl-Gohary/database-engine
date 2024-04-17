@@ -27,6 +27,7 @@ public class Page implements Serializable {
         }
         return sbPage.toString();
     }
+
     public boolean fnIsFull(){
         return vecTuples.size() == iMaxRowsCount;
     }
