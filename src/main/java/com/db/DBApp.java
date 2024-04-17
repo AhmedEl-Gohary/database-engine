@@ -9,6 +9,7 @@ public class DBApp {
     public DBApp() {
         init();
     }
+
     public static void fnSerialize(Serializable serObj, String strObjectName){
         try {
             FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
@@ -37,6 +38,7 @@ public class DBApp {
         }
         return false;
     }
+
     public static Object fnDeserialize(String strObjectName){
         Object oObj = null;
         try {
@@ -73,11 +75,9 @@ public class DBApp {
     // be passed in htblColNameType
     // htblColNameValue will have the column name as key and the data
     // type as value
-    public void createTable(String strTableName,
-                            String strClusteringKeyColumn,
-                            Hashtable<String,String> htblColNameType) throws DBAppException{
+    public void createTable(String strTableName, String strClusteringKeyColumn, Hashtable<String, String> htblColNameType) throws DBAppException{
         if (fnIsExistingFile(strTableName))
-            throw new DBAppException("This file name already exists!");
+            throw new DBAppException("This table already exists!");
         Table tableInstance = new Table(strTableName, strClusteringKeyColumn, htblColNameType);
         fnSerialize(tableInstance, strTableName);
     }

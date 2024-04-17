@@ -13,7 +13,7 @@ public class Table implements Serializable{
     static String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
     static String file = rootPath + "metadata.csv";
 
-    public Table(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException {
+    public Table(String strTableName, String strClusteringKeyColumn, Hashtable<String, String> htblColNameType) throws DBAppException {
         vecPages = new Vector<>();
         vecMax = new Vector<>();
         vecMin = new Vector<>();
@@ -21,16 +21,18 @@ public class Table implements Serializable{
         this.strClusteringKeyColumn = strClusteringKeyColumn;
         fnInsertTable(strTableName, strClusteringKeyColumn, htblColNameType);
     }
-    public void fnInsertNewPage(Hashtable<String,Object> htblColNameValue){
+    public void fnInsertNewPage(Hashtable<String, Object> htblColNameValue){
         int iPageNumber = vecPages.size();
-        vecPages.add(this.strTableName+vecPages.size());
+        vecPages.add(this.strTableName + vecPages.size());
         vecMin.add((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         vecMax.add((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
-        Page pageInstance = new Page(this.strTableName,iPageNumber);
-        DBApp.fnSerialize(pageInstance,strTableName+iPageNumber);
+        Page pageInstance = new Page(this.strTableName, iPageNumber);
+        DBApp.fnSerialize(pageInstance, strTableName + iPageNumber);
     }
     public void fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        if(htblColNameValue.get(this.strClusteringKeyColumn)==null)return;
+        if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
+            throw new DBAppException("Clustering Key cannot be null!");
+        }
         int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         Entry entryInstance= new Entry(htblColNameValue, this.strClusteringKeyColumn);
         while(entryInstance != null) {
@@ -53,7 +55,7 @@ public class Table implements Serializable{
         int ans = hi+1;
         while(hi>=l){
             int mid = (hi+l)/2;
-            if(vecMax.get(mid).compareTo(oTarget)>=0 && vecMin.get(mid).compareTo(oTarget)<=0){
+            if(vecMax.get(mid).compareTo(oTarget)>=0 && vecMin.get(mid).compareTo(oTarget)<=0) {
                 return mid;
             }
             if(vecMin.get(mid).compareTo(oTarget)>0) {
