@@ -54,7 +54,9 @@ public class DBApp {
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        // TODO update the index part if exists
+        // TODO: update the index part if exists
+        if (!fnIsExistingFile(strTableName))
+            throw new DBAppException("This table doesn't exist");
         Table tableInstance = (Table) fnDeserialize(strTableName);
         tableInstance.fnInsertEntry(htblColNameValue);
         fnSerialize(tableInstance, strTableName);
@@ -75,16 +77,31 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException{
+        // TODO: update the index if it exists
+        if (!fnIsExistingFile(strTableName))
+            throw new DBAppException("This table doesn't exist");
+        Table tableInstance = (Table) fnDeserialize(strTableName);
+        boolean bPrimaryKeyExists = htblColNameValue.containsKey(tableInstance.strClusteringKeyColumn);
+        if (bPrimaryKeyExists){
 
-        throw new DBAppException("not implemented yet");
+            return;
+        }
+        for (String strColumnName : htblColNameValue.keySet()) {
+            if (fnCheckTableColumn(strTableName, strColumnName)) {
+                //TODO:
+                return;
+            }
+        }
+
+
     }
 
 
-    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[]  strarrOperators) throws DBAppException{
-
+    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
         return null;
     }
+
 
 
     public static void main( String[] args ) throws DBAppException {
@@ -335,6 +352,60 @@ public class DBApp {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String fnGetColumnIndex(String strTableName, String strColName) {
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String line;
+            while ((line = brReader.readLine()) != null) {
+                String[] elements = line.split(",");
+                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
+                    return elements[4];
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public static boolean fnHaveColumnIndex(String strTableName, String strColName) throws DBAppException{
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String line;
+            while ((line = brReader.readLine()) != null) {
+                String[] elements = line.split(",");
+                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
+                    return elements[3].equalsIgnoreCase("true");
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        throw new DBAppException("Column does not exist");
+    }
+
+    public static boolean fnCheckTableColumn(String strTableName, String strColName) throws DBAppException{
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String line;
+            while ((line = brReader.readLine()) != null) {
+                String[] elements = line.split(",");
+                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
+                    return true;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        throw new DBAppException("Column does not exist");
     }
 
 }

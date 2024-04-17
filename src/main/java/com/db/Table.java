@@ -1,6 +1,7 @@
 package com.db;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -25,6 +26,7 @@ public class Table implements Serializable{
         vecMin.add((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         Page pageInstance = new Page(this.strTableName, iPageNumber);
         DBApp.fnSerialize(pageInstance, strTableName + iPageNumber);
+        vecCountRows.add(0);
     }
 
     public void fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
@@ -36,7 +38,6 @@ public class Table implements Serializable{
         while(entryInstance != null) {
             if (iPageNumber == vecPages.size()) {
                 fnInsertNewPage(htblColNameValue);
-                vecCountRows.add(0);
             }
             Page pageInstance = (Page) DBApp.fnDeserialize(strTableName + iPageNumber);
             entryInstance = pageInstance.fnInsertEntry(entryInstance);
@@ -45,6 +46,21 @@ public class Table implements Serializable{
             iPageNumber++;
         }
         vecCountRows.set(iPageNumber - 1, vecCountRows.get(iPageNumber - 1) + 1);
+    }
+
+    public void fnDeleteEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
+        if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
+            throw new DBAppException("Clustering Key cannot be null!");
+        }
+        int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
+        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
+        int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
+        if (iEntryIdx >= 0){
+            pageBlock.vecTuples.remove(iEntryIdx);
+
+        }
+        //TODO: delete empty pages
     }
 
     public int fnCountPages(){
