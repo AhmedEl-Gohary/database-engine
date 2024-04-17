@@ -13,49 +13,6 @@ public class DBApp {
         init();
     }
 
-    public static void fnSerialize(Serializable serObj, String strObjectName){
-        try {
-            FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(serObj);
-            out.close();
-            fileOut.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static boolean fnIsExistingFile(String strObjectName) {
-        Object oObj = null;
-        try {
-            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            oObj = in.readObject();
-            in.close();
-            fileIn.close();
-            return true;
-        } catch (FileNotFoundException e) {
-            return false;
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static Object fnDeserialize(String strObjectName){
-        Object oObj = null;
-        try {
-            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            oObj =  in.readObject();
-            in.close();
-            fileIn.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return oObj;
-    }
-
     // this does whatever initialization you would like
     // or leave it empty if there is no code you want to
     // execute at application startup
@@ -123,16 +80,157 @@ public class DBApp {
         throw new DBAppException("not implemented yet");
     }
 
-    public Iterator processQuery(SQLTerm sqlTerm) {
-
-        return null;
-    }
-
 
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[]  strarrOperators) throws DBAppException{
 
         return null;
     }
+
+
+    public static void main( String[] args ) throws DBAppException {
+
+        String strTableName = "Student";
+        Hashtable htblColNameType = new Hashtable( );
+        htblColNameType.put("id", "java.lang.Integer");
+        htblColNameType.put("name", "java.lang.String");
+        htblColNameType.put("gpa", "java.lang.double");
+        try {
+            DBApp dbApp = new DBApp();
+            dbApp.createTable(strTableName,"id",htblColNameType);
+            HashSet<Integer> hs = new HashSet<>();
+            for(int i=0;i<20;i++){
+                Random r = new Random();
+                Hashtable<String,Object> ht = new Hashtable<>();
+                int id ;
+                while(hs.contains((id=r.nextInt(50))));
+                hs.add(id);
+                ht.put("id",id);
+                ht.put("name",""+(char)(r.nextInt(25)+'a'));
+                ht.put("gpa",r.nextDouble());
+                dbApp.insertIntoTable(strTableName,ht);
+            }
+            Table tableInstance = (Table)fnDeserialize("Student");
+            for(int i = 0; i < tableInstance.fnCountPages(); i++){
+                System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
+                System.out.println("min: " +  tableInstance.vecMin.get(i));
+                String page = tableInstance.vecPages.get(i);
+                Page pageInstance = (Page)fnDeserialize(page);
+                System.out.println(pageInstance);
+            }
+            removeTable("Student");
+
+        } catch (DBAppException e) {
+            System.out.println(e.getMessage());
+        }
+
+
+//        try{
+//            String strTableName = "Student";
+//            DBApp	dbApp = new DBApp( );
+//
+//            Hashtable htblColNameType = new Hashtable( );
+//            htblColNameType.put("id", "java.lang.Integer");
+//            htblColNameType.put("name", "java.lang.String");
+//            htblColNameType.put("gpa", "java.lang.double");
+//            dbApp.createTable( strTableName, "id", htblColNameType );
+//            dbApp.createIndex( strTableName, "gpa", "gpaIndex" );
+//
+//            Hashtable htblColNameValue = new Hashtable( );
+//            htblColNameValue.put("id", 2343432);
+//            htblColNameValue.put("name", "Ahmed Noor");
+//            htblColNameValue.put("gpa", 0.95);
+//            dbApp.insertIntoTable( strTableName , htblColNameValue );
+//
+//            htblColNameValue.clear( );
+//            htblColNameValue.put("id", 453455);
+//            htblColNameValue.put("name", "Ahmed Noor");
+//            htblColNameValue.put("gpa", 0.95);
+//            dbApp.insertIntoTable( strTableName , htblColNameValue );
+//
+//            htblColNameValue.clear( );
+//            htblColNameValue.put("id", 5674567);
+//            htblColNameValue.put("name", "Dalia Noor");
+//            htblColNameValue.put("gpa", 1.25);
+//            dbApp.insertIntoTable( strTableName , htblColNameValue );
+//
+//            htblColNameValue.clear( );
+//            htblColNameValue.put("id", 23498);
+//            htblColNameValue.put("name", "John Noor");
+//            htblColNameValue.put("gpa", 1.5);
+//            dbApp.insertIntoTable( strTableName , htblColNameValue );
+//
+//            htblColNameValue.clear( );
+//            htblColNameValue.put("id", 78452);
+//            htblColNameValue.put("name", "Zaky Noor");
+//            htblColNameValue.put("gpa", 0.88);
+//            dbApp.insertIntoTable( strTableName , htblColNameValue );
+//
+//
+//            SQLTerm[] arrSQLTerms;
+//            arrSQLTerms = new SQLTerm[2];
+//            arrSQLTerms[0]._strTableName =  "Student";
+//            arrSQLTerms[0]._strColumnName=  "name";
+//            arrSQLTerms[0]._strOperator  =  "=";
+//            arrSQLTerms[0]._objValue     =  "John Noor";
+//
+//            arrSQLTerms[1]._strTableName =  "Student";
+//            arrSQLTerms[1]._strColumnName=  "gpa";
+//            arrSQLTerms[1]._strOperator  =  "=";
+//            arrSQLTerms[1]._objValue     =  1.5;
+//
+//            String[]strarrOperators = new String[1];
+//            strarrOperators[0] = "OR";
+//            // select * from Student where name = "John Noor" or gpa = 1.5;
+//            Iterator resultSet = dbApp.selectFromTable(arrSQLTerms , strarrOperators);
+//        }
+//        catch(Exception | DBAppException exp){
+//            exp.printStackTrace( );
+//        }
+    }
+
+    public static void fnSerialize(Serializable serObj, String strObjectName){
+        try {
+            FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(serObj);
+            out.close();
+            fileOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean fnIsExistingFile(String strObjectName) {
+        Object oObj = null;
+        try {
+            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            oObj = in.readObject();
+            in.close();
+            fileIn.close();
+            return true;
+        } catch (FileNotFoundException e) {
+            return false;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static Object fnDeserialize(String strObjectName){
+        Object oObj = null;
+        try {
+            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            oObj =  in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return oObj;
+    }
+
 
     private static void removeTable(String strTableName) {
         Table table = (Table) fnDeserialize(strTableName);
@@ -237,108 +335,6 @@ public class DBApp {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-
-    public static void main( String[] args ) throws DBAppException {
-
-        String strTableName = "Student";
-        Hashtable htblColNameType = new Hashtable( );
-        htblColNameType.put("id", "java.lang.Integer");
-        htblColNameType.put("name", "java.lang.String");
-        htblColNameType.put("gpa", "java.lang.double");
-        try {
-            DBApp dbApp = new DBApp();
-            dbApp.createTable(strTableName,"id",htblColNameType);
-            HashSet<Integer> hs = new HashSet<>();
-            for(int i=0;i<20;i++){
-                Random r = new Random();
-                Hashtable<String,Object> ht = new Hashtable<>();
-                int id ;
-                while(hs.contains((id=r.nextInt(50))));
-                hs.add(id);
-                ht.put("id",id);
-                ht.put("name",""+(char)(r.nextInt(25)+'a'));
-                ht.put("gpa",r.nextDouble());
-                dbApp.insertIntoTable(strTableName,ht);
-            }
-            Table tableInstance = (Table)fnDeserialize("Student");
-            for(int i = 0; i < tableInstance.fnCountPages(); i++){
-                System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
-                System.out.println("min: " +  tableInstance.vecMin.get(i));
-                String page = tableInstance.vecPages.get(i);
-                Page pageInstance = (Page)fnDeserialize(page);
-                System.out.println(pageInstance);
-            }
-            removeTable("Student");
-
-        } catch (DBAppException e) {
-            System.out.println(e.getMessage());
-        }
-
-
-//        try{
-//            String strTableName = "Student";
-//            DBApp	dbApp = new DBApp( );
-//
-//            Hashtable htblColNameType = new Hashtable( );
-//            htblColNameType.put("id", "java.lang.Integer");
-//            htblColNameType.put("name", "java.lang.String");
-//            htblColNameType.put("gpa", "java.lang.double");
-//            dbApp.createTable( strTableName, "id", htblColNameType );
-//            dbApp.createIndex( strTableName, "gpa", "gpaIndex" );
-//
-//            Hashtable htblColNameValue = new Hashtable( );
-//            htblColNameValue.put("id", 2343432);
-//            htblColNameValue.put("name", "Ahmed Noor");
-//            htblColNameValue.put("gpa", 0.95);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 453455);
-//            htblColNameValue.put("name", "Ahmed Noor");
-//            htblColNameValue.put("gpa", 0.95);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 5674567);
-//            htblColNameValue.put("name", "Dalia Noor");
-//            htblColNameValue.put("gpa", 1.25);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 23498);
-//            htblColNameValue.put("name", "John Noor");
-//            htblColNameValue.put("gpa", 1.5);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 78452);
-//            htblColNameValue.put("name", "Zaky Noor");
-//            htblColNameValue.put("gpa", 0.88);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//
-//            SQLTerm[] arrSQLTerms;
-//            arrSQLTerms = new SQLTerm[2];
-//            arrSQLTerms[0]._strTableName =  "Student";
-//            arrSQLTerms[0]._strColumnName=  "name";
-//            arrSQLTerms[0]._strOperator  =  "=";
-//            arrSQLTerms[0]._objValue     =  "John Noor";
-//
-//            arrSQLTerms[1]._strTableName =  "Student";
-//            arrSQLTerms[1]._strColumnName=  "gpa";
-//            arrSQLTerms[1]._strOperator  =  "=";
-//            arrSQLTerms[1]._objValue     =  1.5;
-//
-//            String[]strarrOperators = new String[1];
-//            strarrOperators[0] = "OR";
-//            // select * from Student where name = "John Noor" or gpa = 1.5;
-//            Iterator resultSet = dbApp.selectFromTable(arrSQLTerms , strarrOperators);
-//        }
-//        catch(Exception | DBAppException exp){
-//            exp.printStackTrace( );
-//        }
     }
 
 }
