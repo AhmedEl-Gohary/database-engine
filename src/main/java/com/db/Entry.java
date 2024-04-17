@@ -4,16 +4,21 @@ import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
 
-public class Entry implements Serializable {
+public class Entry implements Serializable, Comparable<Entry>{
     private Hashtable<String, Object> htblTuple;
+    private String strClusteringKey;
 
-    public Entry(Hashtable<String, Object> htblColNameValue){
+    public Entry(Hashtable<String, Object> htblColNameValue,String strClusteringKey){
+        htblTuple = new Hashtable<>();
         for(String strColName: htblColNameValue.keySet()){
-            Object oValue = htblTuple.get(strColName);
+            Object oValue = htblColNameValue.get(strColName);
             htblTuple.put(strColName, oValue);
         }
+        this.strClusteringKey = strClusteringKey;
     }
-
+    public Comparable fnEntryID(){
+        return (Comparable)htblTuple.get(strClusteringKey);
+    }
     @Override
     public String toString() {
         StringBuilder sbEntry = new StringBuilder();
@@ -30,8 +35,14 @@ public class Entry implements Serializable {
 
     public void setHtblTuple(Hashtable<String, Object> htblColNameValue) {
         for(String strColName: htblColNameValue.keySet()){
-            Object oValue = htblTuple.get(strColName);
+            Object oValue = htblColNameValue.get(strColName);
             htblTuple.put(strColName, oValue);
         }
+    }
+
+    @Override
+    public int compareTo(Entry o) {
+        return ((Comparable)this.htblTuple.get(strClusteringKey)).
+                compareTo((Comparable)o.htblTuple.get(strClusteringKey));
     }
 }
