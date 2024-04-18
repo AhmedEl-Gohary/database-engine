@@ -89,6 +89,12 @@ public class Table implements Serializable{
         return iFirstGoodIdx;
     }
 
+    public String fnGetKeyPage(Comparable oTarget){
+        if (isEmpty()) return null;
+        int iPageNumber = fnBSPageLocation(oTarget);
+        return vecPages.get(iPageNumber);
+    }
+
     public void updateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue){
         if(this.isEmpty()){
             return;
