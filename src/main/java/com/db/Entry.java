@@ -8,17 +8,19 @@ public class Entry implements Serializable, Comparable<Entry>{
     private Hashtable<String, Object> htblTuple;
     private String strClusteringKey;
 
-    public Entry(Hashtable<String, Object> htblColNameValue,String strClusteringKey){
+    public Entry(Hashtable<String, Object> htblColNameValue, String strClusteringKey){
         htblTuple = new Hashtable<>();
-        for(String strColName: htblColNameValue.keySet()){
+        for(String strColName: htblColNameValue.keySet()) {
             Object oValue = htblColNameValue.get(strColName);
             htblTuple.put(strColName, oValue);
         }
         this.strClusteringKey = strClusteringKey;
     }
-    public Comparable fnEntryID(){
+
+    public Comparable fnEntryID() {
         return (Comparable)htblTuple.get(strClusteringKey);
     }
+
     @Override
     public String toString() {
         StringBuilder sbEntry = new StringBuilder();
@@ -46,7 +48,7 @@ public class Entry implements Serializable, Comparable<Entry>{
 
     @Override
     public int compareTo(Entry o) {
-        return ((Comparable)this.htblTuple.get(strClusteringKey)).
+        return ((Comparable) this.htblTuple.get(strClusteringKey)).
                 compareTo((Comparable)o.htblTuple.get(strClusteringKey));
     }
 }

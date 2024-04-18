@@ -1,8 +1,10 @@
 package com.db;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.util.*;
 
+// TODO: decide on how to compare Strings
 
 public class DBApp {
 
@@ -68,23 +70,29 @@ public class DBApp {
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
     public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)  throws DBAppException{
-
+        
         throw new DBAppException("not implemented yet");
     }
+
+    // name = "ahmed" and age = 20 and gender = "male"
 
 
     // following method could be used to delete one or more rows.
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException{
+    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+        /* cases:
+        1. ID is present
+        2.
+         */
         // TODO: update the index if it exists
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
         Table tableInstance = (Table) fnDeserialize(strTableName);
         boolean bPrimaryKeyExists = htblColNameValue.containsKey(tableInstance.strClusteringKeyColumn);
-        if (bPrimaryKeyExists){
-
+        if (bPrimaryKeyExists) {
+            
             return;
         }
         for (String strColumnName : htblColNameValue.keySet()) {
@@ -98,14 +106,83 @@ public class DBApp {
     }
 
 
-    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
-        return null;
+    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException, ClassNotFoundException, NoSuchMethodException {
+        if (arrSQLTerms == null || arrSQLTerms.length == 0) {
+            throw new DBAppException("No conditions provided for selection.");
+        }
+        if (strarrOperators.length != arrSQLTerms.length - 1) {
+            throw new DBAppException("Operators and terms mismatch.");
+        }
+        Vector<Entry> results = applyCondition(arrSQLTerms[0]);
+        for (int i = 1; i < arrSQLTerms.length; i++) {
+            Vector<Entry> currentResults = applyCondition(arrSQLTerms[i]);
+            //results = combineResults(results, currentResults, strarrOperators[i - 1]);
+        }
+        return results.iterator();
     }
 
+    private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException, ClassNotFoundException, NoSuchMethodException {
+        Vector<Entry> filteredResults = new Vector<>();
+        Table tableInstance = (Table) fnDeserialize(sqlTerm._strTableName);
+        if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
+
+        } else if (fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
+
+        } else {
+            for (String strPageName : tableInstance.vecPages) {
+                Page page = (Page) fnDeserialize(strPageName);
+                for (Entry entry : page.vecTuples) {
+                    String strColType = "java.lang.Integer"; // TODO: get from method
+                    String strColValue = "100";
+                    Class columnClass = Class.forName(strColType);
+                    Constructor columnContructor = columnClass.getConstructor();
+//                    try {
+//
+//                    } catch {
+//                        throw new DBAppException("Data types are not compatible");
+//                    }
+//                    if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName), () sqlTerm._objValue) {
+//
+//                    }
+                }
+                fnSerialize(page, strPageName);
+            }
+        }
+        return filteredResults;
+    }
+
+    private boolean evaluateCondition(Object columnValue, String operator, Object value) {
+        switch (operator) {
+            case "=":
+                return columnValue.equals(value);
+            case ">":
+                return ((Comparable) columnValue).compareTo(value) > 0;
+            case "<":
+                return ((Comparable) columnValue).compareTo(value) < 0;
+            case "<=":
+                return ((Comparable) columnValue).compareTo(value) <= 0;
+            case ">=":
+                return ((Comparable) columnValue).compareTo(value) >= 0;
+            case "!=":
+                return ((Comparable) columnValue).compareTo(value) != 0;
+        }
+        return false;
+    }
+
+//    private Vector<Entry> combineResults(Vector<Entry> results1, Vector<Entry> results2, String operator) {
+//        if (operator.equals("AND")) {
+//            results1.retainAll(results2);
+//        } else if (operator.equals("OR")) {
+//            Set<Map<String, Object>> set = new HashSet<>(results1);
+//            results1.addAll(results2);
+//            return new ArrayList<>(results1);
+//        }
+//
+//        return results1;
+//    }
 
 
     public static void main( String[] args ) throws DBAppException {
-
         String strTableName = "Student";
         Hashtable htblColNameType = new Hashtable( );
         htblColNameType.put("id", "java.lang.Integer");
@@ -122,11 +199,11 @@ public class DBApp {
                 while(hs.contains((id=r.nextInt(50))));
                 hs.add(id);
                 ht.put("id",id);
-                ht.put("name",""+(char)(r.nextInt(25)+'a'));
+                ht.put("name","" + (char) (r.nextInt(25)+'a'));
                 ht.put("gpa",r.nextDouble());
                 dbApp.insertIntoTable(strTableName,ht);
             }
-            Table tableInstance = (Table)fnDeserialize("Student");
+            Table tableInstance = (Table) fnDeserialize("Student");
             for(int i = 0; i < tableInstance.fnCountPages(); i++){
                 System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
                 System.out.println("min: " +  tableInstance.vecMin.get(i));

@@ -70,6 +70,7 @@ public class Table implements Serializable{
     private boolean fnIsFull(int iPageIdx){
         return vecCountRows.get(iPageIdx) == Page.iMaxRowsCount;
     }
+
     public int fnBSPageLocation(Comparable oTarget){
         int N = vecPages.size();
         int l = 0, r = N - 1;

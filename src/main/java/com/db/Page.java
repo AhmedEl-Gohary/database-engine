@@ -31,9 +31,11 @@ public class Page implements Serializable {
     public boolean fnIsFull(){
         return vecTuples.size() == iMaxRowsCount;
     }
+
     public boolean fnIsOverFlow(){
         return vecTuples.size() > iMaxRowsCount;
     }
+
     public boolean fnIsEmpty(){
         return vecTuples.isEmpty();
     }
