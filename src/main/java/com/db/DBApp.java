@@ -1,7 +1,5 @@
 package com.db;
 
-import com.sun.source.tree.Tree;
-
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -50,9 +48,25 @@ public class DBApp {
 
 
     // following method creates a B+tree index
-    public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException {
+    public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException, ClassNotFoundException {
+        if (!fnIsExistingFile(strTableName))
+            throw new DBAppException("This table doesn't exist!");
+        if (!fnCheckTableColumn(strTableName, strColName))
+            throw new DBAppException("There are no columns with this name in the table!");
+        String strColumnType = fnGetColumnType(strTableName, strColName);
+        Index index = createIndex(strColumnType, strIndexName, strTableName, strColName);
+        fnSerialize(index, strIndexName);
+        fnUpdateTableMetaData(strTableName, strColName, strIndexName);
+    }
 
-        throw new DBAppException("not implemented yet");
+    private <T extends Comparable<T>> Index<T> createIndex(String className, String strIndexName, String strTableName, String strColName) {
+        try {
+            Class<T> dataType = (Class<T>) Class.forName(className);
+            return new Index<T>(strIndexName, strTableName, strColName);
+        } catch (ClassNotFoundException e) {
+            System.out.println("Unsupported class name: " + className);
+            return null;
+        }
     }
 
 
@@ -496,7 +510,7 @@ public class DBApp {
             throw new RuntimeException(e);
         }
     }
-    public static void updateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
+    public static void fnUpdateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String line;
@@ -504,10 +518,10 @@ public class DBApp {
             while ((line = brReader.readLine()) != null) {
                 String[] elements = line.split(",");
                 if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    if(!elements[3].equals("null")) {
-                        throw new DBAppException("Index " + elements[3] + " already exists!");
+                    if(!elements[4].equals("null")) {
+                        throw new DBAppException("Index " + elements[4] + " already exists!");
                     }
-                    elements[3] = strIndexName;
+                    elements[4] = strIndexName;
                     elements[5] = "B+tree";
                 }
                 data.add(String.join(",", elements));
