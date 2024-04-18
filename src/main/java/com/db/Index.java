@@ -50,6 +50,24 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         }
     }
 
+    public Vector<Pair> search(TKey key){
+        Vector<Pair> targetValue = btree.search(key);
+        if (targetValue == null) return null;
+        Vector<Pair> result = new Vector<>();
+        result.addAll(targetValue);
+        return result;
+    }
+
+    public String search(TKey key, Comparable strClusteringKeyValue){
+        Vector<Pair> targetValue = btree.search(key);
+        if (targetValue == null) return null;
+        for (Pair pair: targetValue){
+            if (pair.getCmpClusteringKey().equals(strClusteringKeyValue))
+                return pair.getStrPageName();
+        }
+        return null;
+    }
+
     public void updatePage(TKey key, Comparable strClusteringKeyValue, String strNewPage) {
         Vector<Pair> curValue = btree.search(key);
         if (curValue == null) return;
@@ -113,5 +131,10 @@ class Pair implements Serializable {
 
     public void setStrPageName(String strPageName) {
         this.strPageName = strPageName;
+    }
+
+    @Override
+    public String toString() {
+        return cmpClusteringKey + " " + strPageName;
     }
 }

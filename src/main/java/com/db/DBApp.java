@@ -12,7 +12,6 @@ public class DBApp {
 
     static String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
     static String file = rootPath + "metadata.csv";
-
     public DBApp() {
         init();
     }
@@ -44,19 +43,19 @@ public class DBApp {
             throw new DBAppException("This table already exists!");
         Table tableInstance = new Table(strTableName, strClusteringKeyColumn, htblColNameType);
         fnSerialize(tableInstance, strTableName);
-        fnInsertTableMetaData(strTableName, strClusteringKeyColumn, htblColNameType);
+        Meta.fnInsertTableMetaData(strTableName, strClusteringKeyColumn, htblColNameType);
     }
 
 
     // following method creates a B+tree index
-    public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException, ClassNotFoundException {
+    public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist!");
-        if (!fnCheckTableColumn(strTableName, strColName))
+        if (!Meta.fnCheckTableColumn(strTableName, strColName))
             throw new DBAppException("There are no columns with this name in the table!");
-        String strColumnType = fnGetColumnType(strTableName, strColName);
+        String strColumnType = Meta.fnGetColumnType(strTableName, strColName);
         Index index;
-        String[] tokens = strColumnType.split(".");
+        String[] tokens = strColumnType.split("\\.");
         if (tokens[2].equals("Double")) {
             index = new Index<Double>(strIndexName, strTableName, strColName);
         } else if (tokens[2].equals("Integer")) {
@@ -65,7 +64,7 @@ public class DBApp {
             index = new Index<String>(strIndexName, strTableName, strColName);
         }
         fnSerialize(index, strIndexName);
-        fnUpdateTableMetaData(strTableName, strColName, strIndexName);
+        Meta.fnUpdateTableMetaData(strTableName, strColName, strIndexName);
     }
 
 
@@ -89,8 +88,8 @@ public class DBApp {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
 
-        String strClusteringKeyName = fnGetTableClusteringKey(strTableName);
-        String strClusteringKeyType = fnGetColumnType(strTableName , strClusteringKeyName);
+        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
+        String strClusteringKeyType = Meta.fnGetColumnType(strTableName , strClusteringKeyName);
         Object objClusteringKeyValue = fnMakeInstance(strClusteringKeyType, strClusteringKeyValue);
 
         Table tableInstance = (Table) fnDeserialize(strTableName);
@@ -121,7 +120,7 @@ public class DBApp {
             return;
         }
         for (String strColumnName : htblColNameValue.keySet()) {
-            if (fnCheckTableColumn(strTableName, strColumnName)) {
+            if (Meta.fnCheckTableColumn(strTableName, strColumnName)) {
                 //TODO:
                 return;
             }
@@ -174,7 +173,7 @@ public class DBApp {
         Table tableInstance = (Table) fnDeserialize(sqlTerm._strTableName);
         if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
 
-        } else if (fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
+        } else if (Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
             // TODO: complete
         } else {
             return linearScanning(sqlTerm, tableInstance);
@@ -187,7 +186,7 @@ public class DBApp {
         for (String strPageName : tableInstance.vecPages) {
             Page page = (Page) fnDeserialize(strPageName);
             for (Entry entry : page.vecTuples) {
-                String strColType = fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
                 String strColValue = (String) (sqlTerm._objValue.toString());
                 fnMakeInstance(strColType, strColValue);
                 if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
@@ -271,8 +270,10 @@ public class DBApp {
 
             ht.remove("id");
             ht.put("gpa", 0.7);
-            dbApp.updateTable(strTableName, "2", ht);
-            System.out.println(table);
+            String strIdxName = "Index";
+            dbApp.createIndex(strTableName, "name", strIdxName);
+            Index<String> index = (Index<String>) fnDeserialize(strIdxName);
+            System.out.println(index.search("yasser"));
             removeTable(strTableName);
 
 
@@ -413,19 +414,6 @@ public class DBApp {
         return oObj;
     }
 
-
-    private static void removeTable(String strTableName) {
-        Table table = (Table) fnDeserialize(strTableName);
-        for (String page : table.vecPages) {
-            File file = new File(page + ".class");
-            file.delete();
-        }
-        deleteTableMetaData(strTableName);
-        File file = new File(strTableName + ".class");
-        file.delete();
-    }
-
-
     public static Object fnMakeInstance(String strColType, String strColValue) throws DBAppException {
         try {
             Class<?> className = Class.forName(strColType);
@@ -438,161 +426,15 @@ public class DBApp {
         }
     }
 
-    /**
-     * MetaData helper methods
-     */
-    public static boolean fnSearchMetaData(String strTableName) {
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName)) {
-                    return true;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private static void removeTable(String strTableName) {
+        Table table = (Table) fnDeserialize(strTableName);
+        for (String page : table.vecPages) {
+            File file = new File(page + ".class");
+            file.delete();
         }
-        return false;
+        Meta.deleteTableMetaData(strTableName);
+        File file = new File(strTableName + ".class");
+        file.delete();
     }
 
-    public static void fnInsertTableMetaData(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException {
-        if (fnSearchMetaData(strTableName)) {
-            throw new DBAppException("Table data is already inserted");
-        }
-        // Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType
-        try {
-            FileWriter writer = new FileWriter(DBApp.file, true); // Append mode (optional)
-
-            for (String strColName : htblColNameType.keySet()) {
-                writer.write(fnMakeRow(strTableName, strColName.equals(strClusteringKeyColumn), strColName,
-                        htblColNameType.get(strColName)) + "\n");
-            }
-
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static String fnMakeRow(String strTableName, boolean bIsClusteringKey, String strColName, String strType) {
-        String[] row = new String[6];
-        row[0] = strTableName;
-        row[1] = strColName;
-        row[2] = strType;
-        row[3] = "" + bIsClusteringKey;
-        row[4] = row[5] = "null";
-        return String.join(",", row);
-    }
-
-    public static void deleteTableMetaData(String strTableName) {
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            Vector<String> data = new Vector<>();
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (!elements[0].equals(strTableName)) {
-                    data.add(line);
-                }
-            }
-            FileWriter writer = new FileWriter(DBApp.file, false);
-            for (String record: data){
-                writer.write(record + '\n');
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public static void fnUpdateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            Vector<String> data = new Vector<>();
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    if(!elements[4].equals("null")) {
-                        throw new DBAppException("Index " + elements[4] + " already exists!");
-                    }
-                    elements[4] = strIndexName;
-                    elements[5] = "B+tree";
-                }
-                data.add(String.join(",", elements));
-            }
-            FileWriter writer = new FileWriter(DBApp.file, false);
-            for (String record: data){
-                writer.write(record + '\n');
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String[] fnGetTableColumn(String strTableName, String strColName) {
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    return elements;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-    }
-
-    public static String fnGetTableClusteringKey(String strTableName) {
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[3].equals("true")) {
-                    return elements[1];
-                }
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-    }
-
-    public static void fnCheckColType(String strTableName, String strColName, String strColType) throws DBAppException{
-        if (!fnGetColumnType(strTableName, strColName).equals(strColType))
-            throw new DBAppException("Invalid Column Value!");
-    }
-    public static String fnGetColumnIndex(String strTableName, String strColName) {
-        String[] strColumn = fnGetTableColumn(strTableName,strColName);
-        return strColumn[4];
-    }
-
-    public static boolean fnHaveColumnIndex(String strTableName, String strColName) throws DBAppException{
-        String[] strColumn = fnGetTableColumn(strTableName,strColName);
-        return strColumn[3].equalsIgnoreCase("true");
-    }
-
-    public static boolean fnCheckTableColumn(String strTableName, String strColName) throws DBAppException{
-        String[] strColumn = fnGetTableColumn(strTableName, strColName);
-        return strColumn != null;
-    }
-
-    public static String fnGetColumnType(String strTableName, String strColName) throws DBAppException{
-        String[] strColumn = fnGetTableColumn(strTableName, strColName);
-        return strColumn[2];
-    }
 }
