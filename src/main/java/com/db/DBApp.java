@@ -2,6 +2,7 @@ package com.db;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 // TODO: decide on how to compare Strings
@@ -337,6 +338,22 @@ public class DBApp {
         file.delete();
     }
 
+
+    public static Object fnMakeInstance(String strColType, String strColValue) throws DBAppException {
+        try {
+            Class<?> className = Class.forName(strColType);
+            Constructor<?> constructor = className.getConstructor(String.class);
+            return constructor.newInstance(strColValue);
+        } catch (ClassNotFoundException e) {
+            throw new DBAppException("Invalid Column Value!");
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * MetaData helper methods
+     */
     public static boolean fnSearchMetaData(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
