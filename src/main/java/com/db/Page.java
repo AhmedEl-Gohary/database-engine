@@ -40,6 +40,10 @@ public class Page implements Serializable {
         return vecTuples.isEmpty();
     }
 
+    public String fnGetPageName(){
+        return strTableName + iPageNumber;
+    }
+
     public Entry fnInsertEntry(Entry entryInstance) throws DBAppException {
         int index = Collections.binarySearch(vecTuples, entryInstance);
 
