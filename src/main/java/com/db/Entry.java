@@ -63,4 +63,5 @@ public class Entry implements Serializable, Comparable<Entry>{
     public int hashCode() {
         return fnEntryID().hashCode();
     }
+
 }

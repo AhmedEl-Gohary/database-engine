@@ -72,11 +72,20 @@ public class DBApp {
     // htblColNameValue holds the key and new value
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
-    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue)  throws DBAppException{
-        
-        throw new DBAppException("not implemented yet");
-    }
+    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+        if (!fnIsExistingFile(strTableName))
+            throw new DBAppException("This table doesn't exist");
 
+        String strClusteringKeyName = fnGetTableClusteringKey(strTableName);
+        String strClusteringKeyType = fnGetColumnType(strTableName , strClusteringKeyName);
+        Object objClusteringKeyValue = fnMakeInstance(strClusteringKeyType, strClusteringKeyValue);
+
+        Table tableInstance = (Table) fnDeserialize(strTableName);
+        Hashtable<String, Object> htblEntryKey = new Hashtable<>();
+        htblEntryKey.put(strClusteringKeyName, objClusteringKeyValue);
+        tableInstance.updateEntry(htblEntryKey,htblColNameValue);
+        fnSerialize(tableInstance, strTableName);
+    }
     // name = "ahmed" and age = 20 and gender = "male"
 
 
@@ -245,39 +254,26 @@ public class DBApp {
             ht.put("id", 2);
             ht.put("gpa", 3);
             dbApp.insertIntoTable(strTableName, ht);
+            Table table = (Table) fnDeserialize(strTableName);
 
-            SQLTerm[] arr = new SQLTerm[3]; // yasser, tawfik
-            arr[0] = new SQLTerm();
-            arr[0]._strColumnName = "gpa";
-            arr[0]._strOperator = "!=";
-            arr[0]._strTableName = "Student";
-            arr[0]._objValue = 2;
+            ht.remove("id");
+            ht.put("gpa", 0.7);
+            dbApp.updateTable(strTableName, "2", ht);
+            System.out.println(table);
+            removeTable(strTableName);
 
-            arr[1] = new SQLTerm(); // yasser, ahmed
-            arr[1]._strColumnName = "gpa";
-            arr[1]._strOperator = "!=";
-            arr[1]._strTableName = "Student";
-            arr[1]._objValue = 3;
 
-            arr[2] = new SQLTerm(); // tawfik
-            arr[2]._strColumnName = "gpa";
-            arr[2]._strOperator = "=";
-            arr[2]._strTableName = "Student";
-            arr[2]._objValue = 3;
+//            SQLTerm[] arr = new SQLTerm[1];
+//            arr[0] = new SQLTerm();
+//            arr[0]._strColumnName = "gpa";
+//            arr[0]._strOperator = "<=";
+//            arr[0]._strTableName = "Student";
+//            arr[0]._objValue = 2;
 //
-//            arr[3] = new SQLTerm();
-//            arr[3]._strColumnName = "gpa";
-//            arr[3]._strOperator = "!=";
-//            arr[3]._strTableName = "Student";
-//            arr[3]._objValue = 2;
+//            Vector<Entry> vec = dbApp.applyCondition(arr[0]);
 
-            String[] strarrOperators = {"OR", "AND"};
 
-            dbApp.selectFromTable(arr, strarrOperators);
-
-            //System.out.println(dbApp.combineResults(dbApp.applyCondition(arr[0]), dbApp.applyCondition(arr[1]), "AND"));
-
-            int x;
+//            int x;
 
 
 //            Table tableInstance = (Table) fnDeserialize("Student");
@@ -288,7 +284,7 @@ public class DBApp {
 //                Page pageInstance = (Page)fnDeserialize(page);
 //                System.out.println(pageInstance);
 //            }
-            removeTable("Student");
+//            removeTable("Student");
 
         } catch (DBAppException e) {
             System.out.println(e.getMessage());
@@ -302,7 +298,7 @@ public class DBApp {
 //            Hashtable htblColNameType = new Hashtable( );
 //            htblColNameType.put("id", "java.lang.Integer");
 //            htblColNameType.put("name", "java.lang.String");
-//            htblColNameType.put("gpa", "java.lang.Double");
+//            htblColNameType.put("gpa", "java.lang.double");
 //            dbApp.createTable( strTableName, "id", htblColNameType );
 //            dbApp.createIndex( strTableName, "gpa", "gpaIndex" );
 //
@@ -358,6 +354,8 @@ public class DBApp {
 //            exp.printStackTrace( );
 //        }
     }
+
+
 
     public static void fnSerialize(Serializable serObj, String strObjectName){
         try {
@@ -543,14 +541,14 @@ public class DBApp {
         return null;
     }
 
-    public static String[] fnGetTableClusteringKey(String strTableName) {
+    public static String fnGetTableClusteringKey(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String line;
             while ((line = brReader.readLine()) != null) {
                 String[] elements = line.split(",");
                 if (elements[0].equals(strTableName) && elements[3].equals("true")) {
-                    return elements;
+                    return elements[1];
                 }
             }
         } catch (FileNotFoundException e) {
