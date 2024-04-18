@@ -1,5 +1,7 @@
 package com.db;
 
+import com.sun.source.tree.Tree;
+
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -113,13 +115,39 @@ public class DBApp {
         if (strarrOperators.length != arrSQLTerms.length - 1) {
             throw new DBAppException("Operators and terms mismatch.");
         }
-        Vector<Entry> results = applyCondition(arrSQLTerms[0]);
-        for (int i = 1; i < arrSQLTerms.length; i++) {
-            Vector<Entry> currentResults = applyCondition(arrSQLTerms[i]);
-            //results = combineResults(results, currentResults, strarrOperators[i - 1]);
+
+        int numberOfTerms = arrSQLTerms.length;
+
+        Stack<Vector<Entry>> resultSets = new Stack<>();
+        Stack<String> operators = new Stack<>();
+        for (int i = 0; i < numberOfTerms - 1; i++) {
+            resultSets.push(applyCondition(arrSQLTerms[i]));
+            while (!operators.isEmpty() && getPrecedence(operators.peek()) >= getPrecedence(strarrOperators[i])) {
+                Vector<Entry> set2 = resultSets.pop();
+                Vector<Entry> set1 = resultSets.pop();
+                String operator = operators.pop();
+                resultSets.push(combineResults(set1, set2, operator));
+            }
+            operators.push(strarrOperators[i]);
         }
-        return results.iterator();
+        resultSets.push(applyCondition(arrSQLTerms[numberOfTerms - 1]));
+        while (!operators.isEmpty()) {
+            Vector<Entry> set2 = resultSets.pop();
+            Vector<Entry> set1 = resultSets.pop();
+            String operator = operators.pop();
+            resultSets.push(combineResults(set1, set2, operator));
+        }
+
+        System.out.println(resultSets.peek());
+        return resultSets.pop().iterator();
     }
+
+    private int getPrecedence(String operator) {
+        if (operator.equals("AND")) return 2;
+        if (operator.equals("XOR")) return 1;
+        return 0;
+    }
+
 
     private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
@@ -127,37 +155,22 @@ public class DBApp {
         if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
 
         } else if (fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
-
+            // TODO: complete
         } else {
             for (String strPageName : tableInstance.vecPages) {
                 Page page = (Page) fnDeserialize(strPageName);
                 for (Entry entry : page.vecTuples) {
                     String strColType = fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
                     String strColValue = (String) (sqlTerm._objValue.toString());
-                    if (!determineDataType(strColValue).equalsIgnoreCase(strColType)){
-                        throw new DBAppException("Data types are not compatable");
-                    }else{
-                        if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
-                            filteredResults.add(entry);
-                        }
+                    fnMakeInstance(strColType, strColValue);
+                    if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
+                        filteredResults.add(entry);
                     }
                 }
                 fnSerialize(page, strPageName);
             }
         }
         return filteredResults;
-    }
-
-    public static String determineDataType(String str) {
-        if (str.matches("-?\\d+")) {
-            return "java.lang.integer";
-        }
-        else if (str.matches("-?\\d*\\.\\d+")) {
-            return "java.lang.double";
-        }
-        else {
-            return "java.lang.String";
-        }
     }
 
     private boolean evaluateCondition(Object columnValue, String operator, Object value) {
@@ -178,17 +191,30 @@ public class DBApp {
         return false;
     }
 
-//    private Vector<Entry> combineResults(Vector<Entry> results1, Vector<Entry> results2, String operator) {
-//        if (operator.equals("AND")) {
-//            results1.retainAll(results2);
-//        } else if (operator.equals("OR")) {
-//            Set<Map<String, Object>> set = new HashSet<>(results1);
-//            results1.addAll(results2);
-//            return new ArrayList<>(results1);
-//        }
-//
-//        return results1;
-//    }
+    private Vector<Entry> combineResults(Vector<Entry> results1, Vector<Entry> results2, String operator) throws DBAppException {
+        if (operator.equals("AND")) {
+            results1.retainAll(results2);
+            return results1;
+        }
+        if (operator.equals("OR")) {
+            Set<Entry> set = new TreeSet<>(results1);
+            set.addAll(results2);
+            return new Vector<>(set);
+        }
+        if (operator.equals("XOR")) {
+            Set<Entry> set1 = new TreeSet<>(results1);
+            Set<Entry> set2 = new TreeSet<>(results2);
+
+            Set<Entry> union = new TreeSet<>(set1);
+            union.addAll(set2);
+            Set<Entry> intersection = new TreeSet<>(set1);
+            intersection.retainAll(set2);
+            union.removeAll(intersection);
+
+            return new Vector<>(union);
+        }
+        throw new DBAppException("Operator is not valid!");
+    }
 
 
     public static void main( String[] args ) throws DBAppException {
@@ -196,7 +222,7 @@ public class DBApp {
         Hashtable htblColNameType = new Hashtable( );
         htblColNameType.put("id", "java.lang.Integer");
         htblColNameType.put("name", "java.lang.String");
-        htblColNameType.put("gpa", "java.lang.double");
+        htblColNameType.put("gpa", "java.lang.Double");
         try {
             DBApp dbApp = new DBApp();
             dbApp.createTable(strTableName,"id",htblColNameType);
@@ -217,14 +243,36 @@ public class DBApp {
             ht.put("gpa", 3);
             dbApp.insertIntoTable(strTableName, ht);
 
-            SQLTerm[] arr = new SQLTerm[1];
+            SQLTerm[] arr = new SQLTerm[3]; // yasser, tawfik
             arr[0] = new SQLTerm();
             arr[0]._strColumnName = "gpa";
-            arr[0]._strOperator = "<=";
+            arr[0]._strOperator = "!=";
             arr[0]._strTableName = "Student";
             arr[0]._objValue = 2;
 
-            Vector<Entry> vec = dbApp.applyCondition(arr[0]);
+            arr[1] = new SQLTerm(); // yasser, ahmed
+            arr[1]._strColumnName = "gpa";
+            arr[1]._strOperator = "!=";
+            arr[1]._strTableName = "Student";
+            arr[1]._objValue = 3;
+
+            arr[2] = new SQLTerm(); // tawfik
+            arr[2]._strColumnName = "gpa";
+            arr[2]._strOperator = "=";
+            arr[2]._strTableName = "Student";
+            arr[2]._objValue = 3;
+//
+//            arr[3] = new SQLTerm();
+//            arr[3]._strColumnName = "gpa";
+//            arr[3]._strOperator = "!=";
+//            arr[3]._strTableName = "Student";
+//            arr[3]._objValue = 2;
+
+            String[] strarrOperators = {"OR", "AND"};
+
+            dbApp.selectFromTable(arr, strarrOperators);
+
+            //System.out.println(dbApp.combineResults(dbApp.applyCondition(arr[0]), dbApp.applyCondition(arr[1]), "AND"));
 
             int x;
 
@@ -251,7 +299,7 @@ public class DBApp {
 //            Hashtable htblColNameType = new Hashtable( );
 //            htblColNameType.put("id", "java.lang.Integer");
 //            htblColNameType.put("name", "java.lang.String");
-//            htblColNameType.put("gpa", "java.lang.double");
+//            htblColNameType.put("gpa", "java.lang.Double");
 //            dbApp.createTable( strTableName, "id", htblColNameType );
 //            dbApp.createIndex( strTableName, "gpa", "gpaIndex" );
 //

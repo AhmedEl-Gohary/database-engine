@@ -3,6 +3,7 @@ package com.db;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Objects;
 
 public class Entry implements Serializable, Comparable<Entry>{
     private Hashtable<String, Object> htblTuple;
@@ -50,5 +51,16 @@ public class Entry implements Serializable, Comparable<Entry>{
     public int compareTo(Entry o) {
         return ((Comparable) this.htblTuple.get(strClusteringKey)).
                 compareTo((Comparable)o.htblTuple.get(strClusteringKey));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Entry)) return false;
+        return compareTo((Entry) obj) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return fnEntryID().hashCode();
     }
 }
