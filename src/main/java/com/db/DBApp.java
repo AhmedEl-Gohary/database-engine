@@ -148,26 +148,29 @@ public class DBApp {
         return 0;
     }
 
-
     private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
-        Vector<Entry> filteredResults = new Vector<>();
         Table tableInstance = (Table) fnDeserialize(sqlTerm._strTableName);
         if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
 
         } else if (fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
             // TODO: complete
         } else {
-            for (String strPageName : tableInstance.vecPages) {
-                Page page = (Page) fnDeserialize(strPageName);
-                for (Entry entry : page.vecTuples) {
-                    String strColType = fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
-                    String strColValue = (String) (sqlTerm._objValue.toString());
-                    fnMakeInstance(strColType, strColValue);
-                    if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
-                        filteredResults.add(entry);
-                    }
+            return linearScanning(sqlTerm, tableInstance);
+        }
+        return null;
+    }
+
+    private Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (String strPageName : tableInstance.vecPages) {
+            Page page = (Page) fnDeserialize(strPageName);
+            for (Entry entry : page.vecTuples) {
+                String strColType = fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                fnMakeInstance(strColType, strColValue);
+                if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
+                    filteredResults.add(entry);
                 }
-                fnSerialize(page, strPageName);
             }
         }
         return filteredResults;
