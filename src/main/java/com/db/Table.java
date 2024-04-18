@@ -88,6 +88,26 @@ public class Table implements Serializable{
         }
         return iFirstGoodIdx;
     }
+    public void fnDeleteEntry(Entry entry){
+        int iPageNumber = fnBSPageLocation(entry.fnEntryID());
+        Page pageInstance = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entry);
+        if (iEntryIdx >= 0){
+            pageInstance.vecTuples.remove(iEntryIdx);
+        }
+
+        if(pageInstance.vecTuples.isEmpty()){
+            DBApp.fnDeleteFile(vecPages.get(iPageNumber));
+            vecPages.remove(iPageNumber);
+            vecMin.remove(iPageNumber);
+            vecCountRows.remove(iPageNumber);
+        }
+        else{
+            vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
+            vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber ) - 1);
+            DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
+        }
+    }
 
     public void updateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue){
         if(this.isEmpty()){

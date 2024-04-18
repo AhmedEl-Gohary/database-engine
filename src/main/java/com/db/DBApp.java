@@ -3,7 +3,6 @@ package com.db;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 import java.util.*;
 
 // TODO: decide on how to compare Strings
@@ -113,18 +112,34 @@ public class DBApp {
         // TODO: update the index if it exists
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
-        Table tableInstance = (Table) fnDeserialize(strTableName);
-        boolean bPrimaryKeyExists = htblColNameValue.containsKey(tableInstance.strClusteringKeyColumn);
-        if (bPrimaryKeyExists) {
-            
-            return;
-        }
+
         for (String strColumnName : htblColNameValue.keySet()) {
-            if (Meta.fnCheckTableColumn(strTableName, strColumnName)) {
-                //TODO:
-                return;
+            if (!Meta.fnCheckTableColumn(strTableName, strColumnName)) {
+                throw new DBAppException("Column named: " + strColumnName + " doesn't exist!") ;
             }
         }
+        SQLTerm[] arrSQLTerms;
+        arrSQLTerms = new SQLTerm[htblColNameValue.size()];
+        for (String strColumnName : htblColNameValue.keySet()) {
+            arrSQLTerms[0]._strTableName = strTableName;
+            arrSQLTerms[0]._strColumnName= strColumnName;
+            arrSQLTerms[0]._strOperator = "=";
+            arrSQLTerms[0]._objValue = htblColNameValue.get(strColumnName);
+        }
+        String[] strarrOperators = new String[htblColNameValue.size()-1];
+        Arrays.fill(strarrOperators, "AND");
+        Iterator itInstance = selectFromTable(arrSQLTerms,strarrOperators);
+
+        TreeSet<Entry> resultSet = new TreeSet<>();
+        while (itInstance.hasNext()) {
+            resultSet.add((Entry) itInstance.next());
+        }
+        Table tableInstance = (Table) fnDeserialize(strTableName);
+        for(Entry entry:resultSet){
+            tableInstance.fnDeleteEntry(entry);
+        }
+        fnSerialize(tableInstance,strTableName);
+
 
 
     }
@@ -268,13 +283,13 @@ public class DBApp {
             dbApp.insertIntoTable(strTableName, ht);
             Table table = (Table) fnDeserialize(strTableName);
 
-            ht.remove("id");
-            ht.put("gpa", 0.7);
-            String strIdxName = "Index";
-            dbApp.createIndex(strTableName, "name", strIdxName);
-            Index<String> index = (Index<String>) fnDeserialize(strIdxName);
-            System.out.println(index.search("yasser"));
-            removeTable(strTableName);
+//            ht.remove("id");
+//            ht.put("gpa", 0.7);
+//            String strIdxName = "Index";
+//            dbApp.createIndex(strTableName, "name", strIdxName);
+//            Index<String> index = (Index<String>) fnDeserialize(strIdxName);
+//            System.out.println(index.search("yasser"));
+//            removeTable(strTableName);
 
 
 //            SQLTerm[] arr = new SQLTerm[1];
@@ -413,6 +428,12 @@ public class DBApp {
         }
         return oObj;
     }
+    public static void fnDeleteFile(String strObjectName){
+        File serializedFile = new File(strObjectName);
+        if (serializedFile.exists())
+                serializedFile.delete();
+
+        }
 
     public static Object fnMakeInstance(String strColType, String strColValue) throws DBAppException {
         try {
