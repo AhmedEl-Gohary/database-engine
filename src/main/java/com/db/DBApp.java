@@ -509,6 +509,11 @@ public class DBApp {
         }
         return null;
     }
+
+    public static void fnCheckColType(String strTableName, String strColName, String strColType) throws DBAppException{
+        if (!fnGetColumnType(strTableName, strColName).equals(strColType))
+            throw new DBAppException("Invalid Column Value!");
+    }
     public static String fnGetColumnIndex(String strTableName, String strColName) {
         String[] strColumn = fnGetTableColumn(strTableName,strColName);
         return strColumn[4];
