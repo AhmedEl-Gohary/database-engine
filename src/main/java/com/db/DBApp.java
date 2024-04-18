@@ -134,7 +134,7 @@ public class DBApp {
                 Page pageInstance = (Page)fnDeserialize(page);
                 System.out.println(pageInstance);
             }
-            removeTable("Student");
+//            removeTable("Student");
 
         } catch (DBAppException e) {
             System.out.println(e.getMessage());
@@ -304,7 +304,7 @@ public class DBApp {
         row[2] = strType;
         row[3] = "" + bIsClusteringKey;
         row[4] = row[5] = "null";
-        return String.join(",");
+        return String.join(",", row);
     }
 
     public static void deleteTableMetaData(String strTableName) {
@@ -340,6 +340,7 @@ public class DBApp {
                         throw new DBAppException("Index " + elements[3] + " already exists!");
                     }
                     elements[3] = strIndexName;
+                    elements[5] = "B+tree";
                 }
                 data.add(String.join(",", elements));
             }
@@ -354,14 +355,14 @@ public class DBApp {
         }
     }
 
-    public static String fnGetColumnIndex(String strTableName, String strColName) {
+    public static String[] fnGetTableColumn(String strTableName, String strColName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String line;
             while ((line = brReader.readLine()) != null) {
                 String[] elements = line.split(",");
                 if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    return elements[4];
+                    return elements;
                 }
             }
         } catch (FileNotFoundException e) {
@@ -372,40 +373,40 @@ public class DBApp {
         return null;
     }
 
-    public static boolean fnHaveColumnIndex(String strTableName, String strColName) throws DBAppException{
+    public static String[] fnGetTableClusteringKey(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String line;
             while ((line = brReader.readLine()) != null) {
                 String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    return elements[3].equalsIgnoreCase("true");
+                if (elements[0].equals(strTableName) && elements[3].equals("true")) {
+                    return elements;
                 }
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        throw new DBAppException("Column does not exist");
+        return null;
+    }
+    public static String fnGetColumnIndex(String strTableName, String strColName) {
+        String[] strColumn = fnGetTableColumn(strTableName,strColName);
+        return strColumn[4];
+    }
+
+    public static boolean fnHaveColumnIndex(String strTableName, String strColName) throws DBAppException{
+        String[] strColumn = fnGetTableColumn(strTableName,strColName);
+        return strColumn[3].equalsIgnoreCase("true");
     }
 
     public static boolean fnCheckTableColumn(String strTableName, String strColName) throws DBAppException{
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    return true;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        throw new DBAppException("Column does not exist");
+        String[] strColumn = fnGetTableColumn(strTableName, strColName);
+        return strColumn != null;
     }
 
+    public static String fnGetColumnType(String strTableName, String strColName) throws DBAppException{
+        String[] strColumn = fnGetTableColumn(strTableName, strColName);
+        return strColumn[2];
+    }
 }
