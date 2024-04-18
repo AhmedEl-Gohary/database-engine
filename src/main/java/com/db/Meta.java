@@ -8,14 +8,14 @@ public final class Meta {
 
     /**
      * MetaData helper methods
+     * Layout : TableName,ColumnName, ColumnType, ClusteringKey, IndexName, IndexType
      */
     public static boolean fnSearchMetaData(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String line;
             while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName)) {
+                if (fnGetTableName(line).equals(strTableName)) {
                     return true;
                 }
             }
@@ -23,6 +23,41 @@ public final class Meta {
             throw new RuntimeException(e);
         }
         return false;
+    }
+
+    public static Vector<String> fnGetTableInfo(String strTableName) {
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String columnInfo;
+            Vector<String> tableInfo = new Vector<>();
+            while ((columnInfo = brReader.readLine()) != null) {
+                if (fnGetTableName(columnInfo).equals(strTableName)) {
+                    tableInfo.add(columnInfo);
+                }
+            }
+            return tableInfo;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void fnCheckTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+        String clusteringKey = fnGetTableClusteringKey(strTableName);
+        if (htblColNameValue.get(clusteringKey).equals(null))
+            throw new DBAppException("Clustering Key " + clusteringKey + " Cannot Be Null");
+        Vector<String> columnNames = fnGetTableColumns(strTableName);
+        //TODO: complete check
+    }
+
+    public static Vector<String> fnGetTableColumns(String strTableName) {
+        Vector<String> table = fnGetTableInfo(strTableName);
+        Vector<String> tableColumns = new Vector<>();
+        for (String columnInfo : table) {
+            if (fnGetTableName(columnInfo).equals(strTableName)) {
+                tableColumns.add(fnGetColumnName(columnInfo));
+            }
+        }
+        return tableColumns;
     }
 
     public static void fnInsertTableMetaData(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException {
@@ -57,54 +92,17 @@ public final class Meta {
     public static void deleteTableMetaData(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
+            String columnInfo;
             Vector<String> data = new Vector<>();
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (!elements[0].equals(strTableName)) {
-                    data.add(line);
+            while ((columnInfo = brReader.readLine()) != null) {
+                if (!fnGetTableName(columnInfo).equals(strTableName)) {
+                    data.add(columnInfo);
                 }else {
-                    if (!elements[4].equals("null")){
-                        File file = new File(elements[4] + ".class");
+                    if (!fnGetIndexName(columnInfo).equals("null")){
+                        File file = new File(fnGetIndexName(columnInfo) + ".class");
                         file.delete();
                     }
                 }
-            }
-            FileWriter writer = new FileWriter(DBApp.file, false);
-            for (String record: data){
-                writer.write(record + '\n');
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void showMetaData() {
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                System.out.println(line);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public static void fnUpdateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            Vector<String> data = new Vector<>();
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    if(!elements[4].equals("null")) {
-                        throw new DBAppException("Index " + elements[4] + " already exists!");
-                    }
-                    elements[4] = strIndexName;
-                    elements[5] = "B+tree";
-                }
-                data.add(String.join(",", elements));
             }
             FileWriter writer = new FileWriter(DBApp.file, false);
             for (String record: data){
@@ -116,34 +114,57 @@ public final class Meta {
         }
     }
 
-    public static String[] fnGetTableColumn(String strTableName, String strColName) {
+    public static void showMetaData() {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[1].equals(strColName)) {
-                    return elements;
-                }
+            String columnInfo;
+            while ((columnInfo = brReader.readLine()) != null) {
+                System.out.println(columnInfo);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+    public static void fnUpdateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String columnInfo;
+            Vector<String> data = new Vector<>();
+            while ((columnInfo = brReader.readLine()) != null) {
+                String[] info = columnInfo.split(",");
+                if (fnGetTableName(columnInfo).equals(strTableName) && fnGetColumnName(columnInfo).equals(strColName)) {
+                    if(!fnGetIndexName(columnInfo).equals("null")) {
+                        throw new DBAppException("Index " + fnGetIndexName(columnInfo) + " already exists!");
+                    }
+                    info[4] = strIndexName;
+                    info[5] = "B+tree";
+                }
+                data.add(String.join(",", info));
+            }
+            FileWriter writer = new FileWriter(DBApp.file, false);
+            for (String record: data){
+                writer.write(record + '\n');
+            }
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String[] fnGetTableColumnInfo(String strTableName, String strColName) {
+        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        for (String columnInfo: tableInfo){
+            if (fnGetColumnName(columnInfo).equals(strColName))
+                return columnInfo.split(",");
         }
         return null;
     }
 
     public static String fnGetTableClusteringKey(String strTableName) {
-        try {
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String line;
-            while ((line = brReader.readLine()) != null) {
-                String[] elements = line.split(",");
-                if (elements[0].equals(strTableName) && elements[3].equals("true")) {
-                    return elements[1];
-                }
-            }
-        }  catch (IOException e) {
-            throw new RuntimeException(e);
+        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        for (String columnInfo: tableInfo){
+            if (fnIsClusteringKey(columnInfo))
+                return fnGetColumnName(columnInfo);
         }
         return null;
     }
@@ -153,22 +174,40 @@ public final class Meta {
             throw new DBAppException("Invalid Column Value!");
     }
     public static String fnGetColumnIndex(String strTableName, String strColName) {
-        String[] strColumn = fnGetTableColumn(strTableName,strColName);
-        return strColumn[4];
+        return fnGetTableColumnInfo(strTableName,strColName)[4];
     }
 
-    public static boolean fnHaveColumnIndex(String strTableName, String strColName) throws DBAppException{
-        String[] strColumn = fnGetTableColumn(strTableName,strColName);
-        return strColumn[3].equalsIgnoreCase("true");
+    public static boolean fnHaveColumnIndex(String strTableName, String strColName) {
+        return !fnGetColumnIndex(strTableName, strColName).equals("null");
     }
 
     public static boolean fnCheckTableColumn(String strTableName, String strColName) throws DBAppException{
-        String[] strColumn = fnGetTableColumn(strTableName, strColName);
+        String[] strColumn = fnGetTableColumnInfo(strTableName, strColName);
         return strColumn != null;
     }
 
     public static String fnGetColumnType(String strTableName, String strColName) throws DBAppException{
-        String[] strColumn = fnGetTableColumn(strTableName, strColName);
+        String[] strColumn = fnGetTableColumnInfo(strTableName, strColName);
         return strColumn[2];
+    }
+
+    //TableName,ColumnName, ColumnType, ClusteringKey, IndexName, IndexType
+    public static String fnGetTableName(String strColumnInfo){
+        return strColumnInfo.split(",")[0];
+    }
+    public static String fnGetColumnName(String strColumnInfo){
+        return strColumnInfo.split(",")[1];
+    }
+    public static String fnGetColumnType(String strColumnInfo){
+        return strColumnInfo.split(",")[2];
+    }
+    public static boolean fnIsClusteringKey(String strColumnInfo){
+        return new Boolean(strColumnInfo.split(",")[3]);
+    }
+    public static String fnGetIndexName(String strColumnInfo){
+        return strColumnInfo.split(",")[4];
+    }
+    public static String fnGetIndexType(String strColumnInfo){
+        return strColumnInfo.split(",")[5];
     }
 }

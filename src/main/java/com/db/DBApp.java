@@ -41,8 +41,8 @@ public class DBApp {
         if (fnIsExistingFile(strTableName))
             throw new DBAppException("This table already exists!");
         Table tableInstance = new Table(strTableName, strClusteringKeyColumn, htblColNameType);
-        fnSerialize(tableInstance, strTableName);
         Meta.fnInsertTableMetaData(strTableName, strClusteringKeyColumn, htblColNameType);
+        fnSerialize(tableInstance, strTableName);
     }
 
 
@@ -53,8 +53,8 @@ public class DBApp {
         if (!Meta.fnCheckTableColumn(strTableName, strColName))
             throw new DBAppException("There are no columns with this name in the table!");
         String strColumnType = Meta.fnGetColumnType(strTableName, strColName);
-        Index index;
         String[] tokens = strColumnType.split("\\.");
+        Index index;
         if (tokens[2].equals("Double")) {
             index = new Index<Double>(strIndexName, strTableName, strColName);
         } else if (tokens[2].equals("Integer")) {
@@ -441,12 +441,11 @@ public class DBApp {
             Constructor<?> constructor = className.getConstructor(String.class);
             return constructor.newInstance(strColValue);
         } catch (ClassNotFoundException e) {
-            throw new DBAppException("Invalid Column Value!");
+            throw new DBAppException("Invalid Column Type " + strColType);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new DBAppException("Invalid Column Value " + strColType);
         }
     }
-
     private static void removeTable(String strTableName) {
         Table table = (Table) fnDeserialize(strTableName);
         for (String page : table.vecPages) {
