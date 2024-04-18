@@ -105,8 +105,7 @@ public class DBApp {
 
     }
 
-
-    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException, ClassNotFoundException, NoSuchMethodException {
+    public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
         if (arrSQLTerms == null || arrSQLTerms.length == 0) {
             throw new DBAppException("No conditions provided for selection.");
         }
@@ -121,7 +120,7 @@ public class DBApp {
         return results.iterator();
     }
 
-    private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException, ClassNotFoundException, NoSuchMethodException {
+    private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
         Table tableInstance = (Table) fnDeserialize(sqlTerm._strTableName);
         if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
@@ -132,23 +131,32 @@ public class DBApp {
             for (String strPageName : tableInstance.vecPages) {
                 Page page = (Page) fnDeserialize(strPageName);
                 for (Entry entry : page.vecTuples) {
-                    String strColType = "java.lang.Integer"; // TODO: get from method
-                    String strColValue = "100";
-                    Class columnClass = Class.forName(strColType);
-                    Constructor columnContructor = columnClass.getConstructor();
-//                    try {
-//
-//                    } catch {
-//                        throw new DBAppException("Data types are not compatible");
-//                    }
-//                    if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName), () sqlTerm._objValue) {
-//
-//                    }
+                    String strColType = fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                    String strColValue = (String) (sqlTerm._objValue.toString());
+                    if (!determineDataType(strColValue).equalsIgnoreCase(strColType)){
+                        throw new DBAppException("Data types are not compatable");
+                    }else{
+                        if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
+                            filteredResults.add(entry);
+                        }
+                    }
                 }
                 fnSerialize(page, strPageName);
             }
         }
         return filteredResults;
+    }
+
+    public static String determineDataType(String str) {
+        if (str.matches("-?\\d+")) {
+            return "java.lang.integer";
+        }
+        else if (str.matches("-?\\d*\\.\\d+")) {
+            return "java.lang.double";
+        }
+        else {
+            return "java.lang.String";
+        }
     }
 
     private boolean evaluateCondition(Object columnValue, String operator, Object value) {
@@ -192,26 +200,43 @@ public class DBApp {
             DBApp dbApp = new DBApp();
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
-            for(int i=0;i<20;i++){
-                Random r = new Random();
-                Hashtable<String,Object> ht = new Hashtable<>();
-                int id ;
-                while(hs.contains((id=r.nextInt(50))));
-                hs.add(id);
-                ht.put("id",id);
-                ht.put("name","" + (char) (r.nextInt(25)+'a'));
-                ht.put("gpa",r.nextDouble());
-                dbApp.insertIntoTable(strTableName,ht);
-            }
-            Table tableInstance = (Table) fnDeserialize("Student");
-            for(int i = 0; i < tableInstance.fnCountPages(); i++){
-                System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
-                System.out.println("min: " +  tableInstance.vecMin.get(i));
-                String page = tableInstance.vecPages.get(i);
-                Page pageInstance = (Page)fnDeserialize(page);
-                System.out.println(pageInstance);
-            }
-//            removeTable("Student");
+            Hashtable<String,Object> ht = new Hashtable<>();
+            ht.put("name", "ahmed");
+            ht.put("id", 3);
+            ht.put("gpa", 2);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "yasser");
+            ht.put("id", 1);
+            ht.put("gpa", 1);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "tawfik");
+            ht.put("id", 2);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            SQLTerm[] arr = new SQLTerm[1];
+            arr[0] = new SQLTerm();
+            arr[0]._strColumnName = "gpa";
+            arr[0]._strOperator = "<=";
+            arr[0]._strTableName = "Student";
+            arr[0]._objValue = 2;
+
+            Vector<Entry> vec = dbApp.applyCondition(arr[0]);
+
+            int x;
+
+
+//            Table tableInstance = (Table) fnDeserialize("Student");
+//            for(int i = 0; i < tableInstance.fnCountPages(); i++){
+//                System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
+//                System.out.println("min: " +  tableInstance.vecMin.get(i));
+//                String page = tableInstance.vecPages.get(i);
+//                Page pageInstance = (Page)fnDeserialize(page);
+//                System.out.println(pageInstance);
+//            }
+            removeTable("Student");
 
         } catch (DBAppException e) {
             System.out.println(e.getMessage());
