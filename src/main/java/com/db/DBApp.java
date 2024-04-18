@@ -3,6 +3,7 @@ package com.db;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.*;
 
 // TODO: decide on how to compare Strings
@@ -54,19 +55,17 @@ public class DBApp {
         if (!fnCheckTableColumn(strTableName, strColName))
             throw new DBAppException("There are no columns with this name in the table!");
         String strColumnType = fnGetColumnType(strTableName, strColName);
-        Index index = createIndex(strColumnType, strIndexName, strTableName, strColName);
+        Index index;
+        String[] tokens = strColumnType.split(".");
+        if (tokens[2].equals("Double")) {
+            index = new Index<Double>(strIndexName, strTableName, strColName);
+        } else if (tokens[2].equals("Integer")) {
+            index = new Index<Integer>(strIndexName, strTableName, strColName);
+        } else {
+            index = new Index<String>(strIndexName, strTableName, strColName);
+        }
         fnSerialize(index, strIndexName);
         fnUpdateTableMetaData(strTableName, strColName, strIndexName);
-    }
-
-    private <T extends Comparable<T>> Index<T> createIndex(String className, String strIndexName, String strTableName, String strColName) {
-        try {
-            Class<T> dataType = (Class<T>) Class.forName(className);
-            return new Index<T>(strIndexName, strTableName, strColName);
-        } catch (ClassNotFoundException e) {
-            System.out.println("Unsupported class name: " + className);
-            return null;
-        }
     }
 
 
