@@ -65,6 +65,27 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
 
         return (BTreeLeafNode<TKey, TValue>)node;
     }
+    private BTreeLeafNode<TKey,TValue> findMinInTree(){
+
+        BTreeNode<TKey> node = this.root;
+        while (true) {
+            if(node instanceof BTreeInnerNode<TKey>)
+                node = ((BTreeInnerNode<TKey>)node).findLeftElement();
+            else break;
+        }
+
+        return (BTreeLeafNode<TKey, TValue>)node;
+    }
+    private BTreeLeafNode<TKey,TValue> findMaxInTree(){
+        BTreeNode<TKey> node = this.root;
+        while (true) {
+            if(node instanceof BTreeInnerNode<TKey>)
+                node = ((BTreeInnerNode<TKey>)node).findRightElement();
+            else break;
+        }
+
+        return (BTreeLeafNode<TKey, TValue>)node;
+    }
 
     static class Tuple implements java.io.Serializable {
         Object[] record;
