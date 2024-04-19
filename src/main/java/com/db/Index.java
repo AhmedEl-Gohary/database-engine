@@ -20,8 +20,6 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         build();
     }
 
-
-
     private void build() {
         Table tableInstance = (Table) DBApp.fnDeserialize(strTableName);
         for (String page : tableInstance.vecPages) {
