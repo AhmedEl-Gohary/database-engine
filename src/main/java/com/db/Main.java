@@ -50,11 +50,9 @@ public class Main {
             Index index = (Index)DBApp.fnDeserialize("Index");
             System.out.println(index.findMaxInIndex());
             System.out.println(index.findMinInIndex());
-            System.out.println(index.findGreaterThanKey(2));
-            System.out.println(index.findGreaterThanOrEqualKey(1));
-            System.out.println(index.findLessThanOrEqualKey(2));
-            DBApp.fnSerialize(index,"Index");
-
+            System.out.println(index.findGreaterThanKey(6));
+            dbApp.createTable("Teacher", "id", htblColNameType);
+            DBApp.removeTable(strTableName);
 
         } catch (DBAppException e) {
             throw new RuntimeException(e);

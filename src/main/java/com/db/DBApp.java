@@ -139,7 +139,9 @@ public class DBApp {
         }
 
         // here i am, therefore i code
-
+        if(htblColNameValue.isEmpty()){
+            clearTableAndIndex(strTableName);
+        }
         Vector<Entry> vecResults = new Vector<>();
         Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
 
@@ -616,7 +618,7 @@ public class DBApp {
             throw new DBAppException("Invalid Column Value " + strColType);
         }
     }
-    private static void removeTable(String strTableName) {
+    public static void removeTable(String strTableName) {
         Table table = (Table) fnDeserialize(strTableName);
         for (String page : table.vecPages) {
             File file = new File(page + ".class");
@@ -625,6 +627,21 @@ public class DBApp {
         Meta.deleteTableMetaData(strTableName);
         File file = new File(strTableName + ".class");
         file.delete();
+    }
+    public static void clearTable(String strTableName){
+        Table table = (Table) fnDeserialize(strTableName);
+        for (String page : table.vecPages) {
+            File file = new File(page + ".class");
+            file.delete();
+        }
+    }
+    public  void clearTableAndIndex(String strTableName) throws DBAppException {
+        DBApp.clearTable(strTableName);
+        Vector<PairOfIndexColName> vec = Meta.fnGetIndexesNamesInTable(strTableName);
+        for(PairOfIndexColName pair:vec){
+            createIndex(strTableName,pair.strColumnName, pair.strIndexName);
+
+        }
     }
 
 }
