@@ -10,7 +10,7 @@ import java.util.Vector;
 public class Index<TKey extends Comparable<TKey>> implements Serializable {
     BTree<TKey, Vector<Pair>> btree;
     String strIndexName, strTableName, strIndexColumn;
-    TKey minKey = null;
+    TKey minKey = null, maxKey = null;
 
     public Index() {}
 
@@ -77,11 +77,10 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     }
 
     public void updatePage(TKey key, Comparable strClusteringKeyValue, String strNewPage) {
-        Vector<Pair> curValue = btree.search(key);
-        if (curValue == null) return;
+        Vector<Pair> curValue = delete(key, strClusteringKeyValue);
         for (Pair pair : curValue) {
             if (strClusteringKeyValue.equals(pair.getCmpClusteringKey())) {
-                pair.setStrPageName(strNewPage);
+                insert(key, new Pair(strClusteringKeyValue, strNewPage));
                 return;
             }
         }
