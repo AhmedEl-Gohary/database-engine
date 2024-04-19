@@ -132,11 +132,7 @@ public class DBApp {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
 
-        for (String strColumnName : htblColNameValue.keySet()) {
-            if (!Meta.fnCheckTableColumn(strTableName, strColumnName)) {
-                throw new DBAppException("Column named: " + strColumnName + " doesn't exist!") ;
-            }
-        }
+        Meta.fnCheckTableColumns(strTableName, htblColNameValue);
 
         // here i am, therefore i code
         if(htblColNameValue.isEmpty()){
@@ -152,7 +148,6 @@ public class DBApp {
             vecResults.add(entryInstance);
         }
         else{
-            Vector<String> tableInfo = Meta.fnGetTableInfo(strTableName);
             if(vecOfPairs.isEmpty()){
                 // not index found;
                 // linear search
@@ -165,12 +160,9 @@ public class DBApp {
                         if(ok)
                             vecResults.add(entry);
                     }
-                    fnSerialize(page,strPageName);
                 }
-
             }
             else{
-
                 Index indexInstance = (Index) fnDeserialize(vecOfPairs.get(0).strIndexName);
                 Vector<Pair> vecOfSubResults = indexInstance.search((Comparable)htblColNameValue.get(vecOfPairs.get(0).strColumnName));
                 for(Pair pair:vecOfSubResults) {
@@ -181,7 +173,6 @@ public class DBApp {
                     if(ok)
                         vecResults.add(entry);
                 }
-                fnSerialize(indexInstance,vecOfPairs.get(0).strIndexName);
                 for(PairOfIndexColName pair:vecOfPairs) {
                     indexInstance = (Index)fnDeserialize(pair.strIndexName);
                     for(Entry entry : vecResults){
@@ -194,10 +185,7 @@ public class DBApp {
         for(Entry entry: vecResults)
             tableInstance.fnDeleteEntry(entry);
 
-
         fnSerialize(tableInstance, strTableName);
-
-
     }
 
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
@@ -435,7 +423,7 @@ public class DBApp {
 
             return new Vector<>(union);
         }
-        throw new DBAppException("Invalid Operator!");
+        throw new DBAppException("Invalid Operator " + operator);
     }
 
 
@@ -645,13 +633,14 @@ public class DBApp {
             File file = new File(page + ".class");
             file.delete();
         }
+        table.clear();
+        fnSerialize(table, strTableName);
     }
     public  void clearTableAndIndex(String strTableName) throws DBAppException {
         DBApp.clearTable(strTableName);
         Vector<PairOfIndexColName> vec = Meta.fnGetIndexesNamesInTable(strTableName);
         for(PairOfIndexColName pair:vec){
             createIndex(strTableName,pair.strColumnName, pair.strIndexName);
-
         }
     }
 

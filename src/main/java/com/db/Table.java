@@ -146,14 +146,12 @@ public class Table implements Serializable{
         if (iEntryIdx >= 0){
             pageInstance.vecTuples.remove(iEntryIdx);
         }
-
         if(pageInstance.vecTuples.isEmpty()){
             DBApp.fnDeleteFile(vecPages.get(iPageNumber));
             vecPages.remove(iPageNumber);
             vecMin.remove(iPageNumber);
             vecCountRows.remove(iPageNumber);
-        }
-        else{
+        } else{
             vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
             vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber ) - 1);
             DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
@@ -198,6 +196,13 @@ public class Table implements Serializable{
         htblColNameType.put("gpa", "java.lang.double");
         Table t = new Table(strTableName, "id", htblColNameType);
 
+    }
+
+    public void clear(){
+        vecPages.clear();
+        vecMin.clear();
+        vecCountRows.clear();
+        iCreatedPages = 0;
     }
     @Override
     public String toString(){
