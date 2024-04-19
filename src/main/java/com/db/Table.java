@@ -126,9 +126,22 @@ public class Table implements Serializable{
         if(iEntryIdx >=0){
             Entry entryFetch =  pageInstance.vecTuples.get(iEntryIdx);
             entryFetch.setHtblTuple(htblColNameValue);
+
+            this.fnUpdateTableIndecies(htblColNameValue);
         }
         DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
     }
+    public void fnUpdateTableIndecies(Hashtable<String, Object> htblColNameValue){
+
+        for(String strColName: htblColNameValue.keySet()){
+            if(Meta.fnHaveColumnIndex(this.strTableName, strColName)){
+                String strIndexName = Meta.fnGetColumnIndex(this.strTableName, strColName);
+                Index idx = (Index) DBApp.fnDeserialize(strIndexName);
+                idx.update();
+            }
+        }
+    }
+
     public boolean isEmpty(){
         return vecMin.isEmpty();
     }
