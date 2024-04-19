@@ -8,7 +8,7 @@ import java.util.Vector;
 public class Index<TKey extends Comparable<TKey>> implements Serializable {
     BTree<TKey, Vector<Pair>> btree;
     String strIndexName, strTableName, strIndexColumn;
-    TKey minKey = null;
+    TKey minKey = null, maxKey = null;
 
     public Index() {}
 

@@ -250,6 +250,40 @@ public class DBApp {
         return null;
     }
 
+    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index, Table tableInstance) {
+        if (sqlTerm._strOperator.equals("=")) {
+            return indexPointQuery(sqlTerm, index);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+
+        }
+        return null;
+    }
+
+    private Vector<Entry> indexPointQuery(SQLTerm sqlTerm, Index index) {
+        Vector<Entry> resultSet = new Vector<>();
+        Vector<Pair> vecPages = index.search((Comparable) sqlTerm._objValue);
+        for (Pair pair : vecPages) {
+            Comparable id = pair.getCmpClusteringKey();
+            String pageName = pair.getStrPageName();
+            Page page = (Page) fnDeserialize(pageName);
+            int iEntryIndex = binarySearchIndexOfEntry(page.vecTuples, id);
+            resultSet.add(page.vecTuples.get(iEntryIndex));
+        }
+        return resultSet;
+    }
+
+
+    private Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        if (sqlTerm._strOperator.equals("=")) {
+            return binarySearchClustering(sqlTerm, tableInstance);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+            return scanFromTheEnd(sqlTerm, tableInstance);
+        }
+        return scanFromTheBeginning(sqlTerm, tableInstance);
+    }
+
     private Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
         for (String strPageName : tableInstance.vecPages) {
@@ -266,27 +300,7 @@ public class DBApp {
         return filteredResults;
     }
 
-    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index, Table tableInstance) {
-        if (sqlTerm._strOperator.equals("=")) {
-            return binarySearchIndex(sqlTerm, tableInstance);
-        }
-        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
-            return scanFromTheEnd(sqlTerm, tableInstance);
-        }
-        return scanFromTheBeginning(sqlTerm, tableInstance);
-    }
-
-    private Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
-        if (sqlTerm._strOperator.equals("=")) {
-            return binarySearchIndex(sqlTerm, tableInstance);
-        }
-        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
-            return scanFromTheEnd(sqlTerm, tableInstance);
-        }
-        return scanFromTheBeginning(sqlTerm, tableInstance);
-    }
-
-    private Vector<Entry> binarySearchIndex(SQLTerm sqlTerm, Table tableInstance) {
+    private Vector<Entry> binarySearchClustering(SQLTerm sqlTerm, Table tableInstance) {
         int iPageIndex = binarySearchPageLocation((Comparable) sqlTerm._objValue, tableInstance);
         if (iPageIndex == -1) return new Vector<Entry>();
         Page page = (Page) fnDeserialize(tableInstance.vecPages.get(iPageIndex));
@@ -409,6 +423,7 @@ public class DBApp {
         }
         throw new DBAppException("Operator is not valid!");
     }
+
     public static void fnSerialize(Serializable serObj, String strObjectName){
         try {
             FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
@@ -451,6 +466,7 @@ public class DBApp {
         }
         return oObj;
     }
+
     public static void fnDeleteFile(String strObjectName){
         File serializedFile = new File(strObjectName);
         if (serializedFile.exists())
@@ -469,6 +485,7 @@ public class DBApp {
             throw new DBAppException("Invalid Column Value " + strColType);
         }
     }
+
     private static void removeTable(String strTableName) {
         Table table = (Table) fnDeserialize(strTableName);
         for (String page : table.vecPages) {
@@ -506,7 +523,6 @@ public class DBApp {
 //            ht.put("gpa", 3);
 //            dbApp.insertIntoTable(strTableName, ht);
 //            ht.clear();
-            Table table = (Table) fnDeserialize(strTableName);
 //            dbApp.createIndex(table.strTableName, "name", "test" );
 
             System.out.println();
@@ -545,7 +561,9 @@ public class DBApp {
             ht.put("id", 7);
             ht.put("gpa", 3);
             dbApp.insertIntoTable(strTableName, ht);
-             table = (Table) fnDeserialize(strTableName);
+
+            Table table = (Table) fnDeserialize(strTableName);
+            table = (Table) fnDeserialize(strTableName);
             System.out.println(table);
             SQLTerm[] arr = new SQLTerm[1];
             arr[0] = new SQLTerm();
@@ -588,6 +606,7 @@ public class DBApp {
 //            removeTable("Student");
 
         } catch (Throwable e) {
+            removeTable(strTableName);
             System.out.println(e.getMessage());
         }
 
