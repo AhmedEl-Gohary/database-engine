@@ -71,10 +71,13 @@ public class DBApp {
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
         if (!fnIsExistingFile(strTableName))
-            throw new DBAppException("This table doesn't exist");
+            throw new DBAppException("Table " + strTableName + " Does Not Exist");
+        String strClusteringKey = Meta.fnGetTableClusteringKey(strTableName);
+        if (!Meta.fnCheckClusteringKey(strTableName, htblColNameValue))
+            throw new DBAppException("Clustering Key " + strClusteringKey + " Cannot Be Null");
+        Meta.fnCheckTableColumns(strTableName, htblColNameValue);
         Table tableInstance = (Table) fnDeserialize(strTableName);
         String strPageName = tableInstance.fnInsertEntry(htblColNameValue);
-        String strClusteringKey = Meta.fnGetTableClusteringKey(strTableName);
         Vector<Meta.PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
         for(Meta.PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
             Index indexInstance = (Index)fnDeserialize(pairOfIndexColName.strIndexName);
