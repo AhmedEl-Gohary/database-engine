@@ -154,4 +154,12 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
 
         return borrowIndex == 0 ? sibling.getKey(0) : this.getKey(0);
     }
+    @Override
+    public String toString(){
+        StringBuilder st = new StringBuilder();
+        for(int i =0;i <keyCount; i++){
+            st.append(keys[i] + " --> " + values[i].toString()+"\n");
+        }
+        return st.toString();
+    }
 }

@@ -69,7 +69,7 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
         Table tableInstance = (Table) fnDeserialize(strTableName);
@@ -90,7 +90,7 @@ public class DBApp {
     // htblColNameValue holds the key and new value
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
-    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
 
@@ -101,7 +101,7 @@ public class DBApp {
         Table tableInstance = (Table) fnDeserialize(strTableName);
         Hashtable<String, Object> htblEntryKey = new Hashtable<>();
         htblEntryKey.put(strClusteringKeyName, objClusteringKeyValue);
-        tableInstance.updateEntry(htblEntryKey,htblColNameValue);
+        tableInstance.fnUpdateEntry(htblEntryKey,htblColNameValue);
 
         // index part
         Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
@@ -126,7 +126,7 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException {
 
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
@@ -488,6 +488,28 @@ public class DBApp {
         htblColNameType.put("gpa", "java.lang.Double");
         try {
             DBApp dbApp = new DBApp();
+//            dbApp.createTable(strTableName,"id",htblColNameType);
+//            HashSet<Integer> hs = new HashSet<>();
+//            Hashtable<String,Object> ht = new Hashtable<>();
+//            ht.put("name", "ahmed");
+//            ht.put("id", 3);
+//            ht.put("gpa", 2);
+//            dbApp.insertIntoTable(strTableName, ht);
+//            ht.clear();
+//            ht.put("name", "yasser");
+//            ht.put("id", 1);
+//            ht.put("gpa", 1);
+//            dbApp.insertIntoTable(strTableName, ht);
+//            ht.clear();
+//            ht.put("name", "tawfik");
+//            ht.put("id", 2);
+//            ht.put("gpa", 3);
+//            dbApp.insertIntoTable(strTableName, ht);
+//            ht.clear();
+            Table table = (Table) fnDeserialize(strTableName);
+//            dbApp.createIndex(table.strTableName, "name", "test" );
+
+            System.out.println();
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
             Hashtable<String,Object> ht = new Hashtable<>();
@@ -523,7 +545,7 @@ public class DBApp {
             ht.put("id", 7);
             ht.put("gpa", 3);
             dbApp.insertIntoTable(strTableName, ht);
-            Table table = (Table) fnDeserialize(strTableName);
+             table = (Table) fnDeserialize(strTableName);
             System.out.println(table);
             SQLTerm[] arr = new SQLTerm[1];
             arr[0] = new SQLTerm();
@@ -565,7 +587,7 @@ public class DBApp {
 //            }
 //            removeTable("Student");
 
-        } catch (DBAppException e) {
+        } catch (Throwable e) {
             System.out.println(e.getMessage());
         }
 

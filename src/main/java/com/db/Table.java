@@ -151,7 +151,7 @@ public class Table implements Serializable{
         return vecPages.get(iPageNumber);
     }
 
-    public void updateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue){
+    public void fnUpdateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue){
         if(this.isEmpty()){
             return;
         }
@@ -162,9 +162,13 @@ public class Table implements Serializable{
         if(iEntryIdx >=0){
             Entry entryFetch =  pageInstance.vecTuples.get(iEntryIdx);
             entryFetch.setHtblTuple(htblColNameValue);
+
+
         }
         DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
     }
+
+
     public boolean isEmpty(){
         return vecMin.isEmpty();
     }
