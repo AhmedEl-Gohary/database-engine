@@ -114,6 +114,35 @@ public final class Meta {
         }
     }
 
+    public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName){
+        try {
+            Vector<PairOfIndexColName> result = new Vector<>();
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String columnInfo;
+            while ((columnInfo = brReader.readLine()) != null) {
+                String[] row = columnInfo.split(",");
+                if(row[0].equals(strTableName)){
+                    if(!row[3].equals("null")){
+                        result.add(new PairOfIndexColName(row[1],row[4]));
+                    }
+                }
+            }
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    static class PairOfIndexColName {
+        String strColumnName;
+        String strIndexName;
+        PairOfIndexColName(String strColumnName,String strIndexName){
+            this.strColumnName = strColumnName;
+            this.strIndexName = strIndexName;
+        }
+
+
+    }
+
     public static void showMetaData() {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
@@ -209,5 +238,11 @@ public final class Meta {
     }
     public static String fnGetIndexType(String strColumnInfo){
         return strColumnInfo.split(",")[5];
+    }
+    public static Hashtable<String,String> fnMapColumnToIndexName (Vector<String> vecTableInfo){
+        Hashtable<String,String> result = new Hashtable<>();
+        for(String strColumnInfo :vecTableInfo)
+            result.put(strColumnInfo,fnGetIndexName(strColumnInfo));
+        return result;
     }
 }
