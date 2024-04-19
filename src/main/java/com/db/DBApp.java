@@ -104,20 +104,18 @@ public class DBApp {
         tableInstance.updateEntry(htblEntryKey,htblColNameValue);
 
         // index part
-        Vector<String> vecTableInfo = Meta.fnGetTableInfo(strTableName);
-        Hashtable<String,String> htblColumnIndexName = Meta.fnMapColumnToIndexName(vecTableInfo);
-        for(String strColName:htblColNameValue.keySet()){
-            if(!htblColumnIndexName.get(strColName).equals("null")){
-                Index indexInstance = (Index) fnDeserialize(htblColumnIndexName.get(strColName));
-                Comparable key = (Comparable) tableInstance.
-                                        fnSearchEntryWithClusteringKey(htblEntryKey,strClusteringKeyName).
-                                        getColumnValue(strColName);
-                Vector<Pair> toBeChanged = indexInstance.delete(key,(Comparable) objClusteringKeyValue);
-                for (Pair pair : toBeChanged) {
-                    indexInstance.insert((Comparable)htblColNameValue.get(strColName),pair);
-                }
-                fnSerialize(indexInstance,htblColumnIndexName.get(strColName));
+        Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
+        for(PairOfIndexColName pair: vecOfPairs){
+            Index indexInstance = (Index) fnDeserialize(pair.strIndexName);
+            Comparable key = (Comparable) tableInstance.
+                                    fnSearchEntryWithClusteringKey(htblEntryKey,strClusteringKeyName).
+                                    getColumnValue(pair.strColumnName);
+            Vector<Pair> toBeChanged = indexInstance.delete(key,(Comparable) objClusteringKeyValue);
+            for (Pair pairtoBeChanged : toBeChanged) {
+                indexInstance.insert((Comparable)htblColNameValue.get(pair.strColumnName),pairtoBeChanged);
             }
+            fnSerialize(indexInstance,pair.strIndexName);
+
         }
         fnSerialize(tableInstance, strTableName);
     }
