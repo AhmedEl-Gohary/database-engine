@@ -524,6 +524,7 @@ public class DBApp {
 //            dbApp.insertIntoTable(strTableName, ht);
 //            ht.clear();
 //            dbApp.createIndex(table.strTableName, "name", "test" );
+// ahmed was here
 
             System.out.println();
             dbApp.createTable(strTableName,"id",htblColNameType);
