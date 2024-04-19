@@ -122,7 +122,7 @@ public final class Meta {
             while ((columnInfo = brReader.readLine()) != null) {
                 String[] row = columnInfo.split(",");
                 if(row[0].equals(strTableName)){
-                    if(!row[3].equals("null")){
+                    if(!row[4].equals("null")){
                         result.add(new PairOfIndexColName(row[1],row[4]));
                     }
                 }
