@@ -115,33 +115,17 @@ public final class Meta {
     }
 
     public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName){
-        try {
             Vector<PairOfIndexColName> result = new Vector<>();
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
-            String columnInfo;
-            while ((columnInfo = brReader.readLine()) != null) {
-                String[] row = columnInfo.split(",");
-                if(row[0].equals(strTableName)){
-                    if(!row[3].equals("null")){
-                        result.add(new PairOfIndexColName(row[1],row[4]));
-                    }
-                }
+            Vector<String> vecTableInfo = fnGetTableInfo(strTableName);
+            for(String strColInfo:vecTableInfo){
+                String strIndexName = fnGetIndexName(strColInfo);
+                String strColName = fnGetColumnName(strColInfo);
+                if (!strIndexName.equals("null"))
+                    result.add(new PairOfIndexColName(strColName,strIndexName));
             }
             return result;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
-    static class PairOfIndexColName {
-        String strColumnName;
-        String strIndexName;
-        PairOfIndexColName(String strColumnName,String strIndexName){
-            this.strColumnName = strColumnName;
-            this.strIndexName = strIndexName;
-        }
 
-
-    }
 
     public static void showMetaData() {
         try {
@@ -245,4 +229,14 @@ public final class Meta {
             result.put(strColumnInfo,fnGetIndexName(strColumnInfo));
         return result;
     }
+}
+  class PairOfIndexColName {
+    public String strColumnName;
+    public String strIndexName;
+    PairOfIndexColName(String strColumnName,String strIndexName){
+        this.strColumnName = strColumnName;
+        this.strIndexName = strIndexName;
+    }
+
+
 }

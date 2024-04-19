@@ -75,8 +75,8 @@ public class DBApp {
         Table tableInstance = (Table) fnDeserialize(strTableName);
         String strPageName = tableInstance.fnInsertEntry(htblColNameValue);
         String strClusteringKey = Meta.fnGetTableClusteringKey(strTableName);
-        Vector<Meta.PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
-        for(Meta.PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
+        Vector<PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
+        for(PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
             Index indexInstance = (Index)fnDeserialize(pairOfIndexColName.strIndexName);
             indexInstance.insert((Comparable) htblColNameValue.get(pairOfIndexColName.strColumnName),
                     new Pair((Comparable) htblColNameValue.get(strClusteringKey),strPageName));
@@ -129,11 +129,7 @@ public class DBApp {
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
     public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
-        /* cases:
-        1. ID is present
-        2.
-         */
-        // TODO: update the index if it exists
+
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
 
@@ -142,28 +138,63 @@ public class DBApp {
                 throw new DBAppException("Column named: " + strColumnName + " doesn't exist!") ;
             }
         }
-        SQLTerm[] arrSQLTerms;
-        arrSQLTerms = new SQLTerm[htblColNameValue.size()];
-        for (String strColumnName : htblColNameValue.keySet()) {
-            arrSQLTerms[0]._strTableName = strTableName;
-            arrSQLTerms[0]._strColumnName= strColumnName;
-            arrSQLTerms[0]._strOperator = "=";
-            arrSQLTerms[0]._objValue = htblColNameValue.get(strColumnName);
-        }
-        String[] strarrOperators = new String[htblColNameValue.size()-1];
-        Arrays.fill(strarrOperators, "AND");
-        Iterator itInstance = selectFromTable(arrSQLTerms,strarrOperators);
 
-        TreeSet<Entry> resultSet = new TreeSet<>();
-        while (itInstance.hasNext()) {
-            resultSet.add((Entry) itInstance.next());
+        // here i am, therefore i code
+
+        Vector<Entry> vecResults = new Vector<>();
+        Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
+
+        Table tableInstance = (Table)fnDeserialize(strTableName);
+        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
+        if(htblColNameValue.containsKey(strClusteringKeyName)){
+            Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
+            vecResults.add(entryInstance);
         }
-        Table tableInstance = (Table) fnDeserialize(strTableName);
-        for(Entry entry:resultSet){
+        else{
+            Vector<String> tableInfo = Meta.fnGetTableInfo(strTableName);
+            if(vecOfPairs.isEmpty()){
+                // not index found;
+                // linear search
+                for (String strPageName : tableInstance.vecPages) {
+                    Page page = (Page) fnDeserialize(strPageName);
+                    for (Entry entry : page.vecTuples) {
+                        boolean ok = true;
+                        for(String strColName:htblColNameValue.keySet())
+                            ok &= entry.getColumnValue(strColName).equals(htblColNameValue.get(strColName));
+                        if(ok)
+                            vecResults.add(entry);
+                    }
+                    fnSerialize(page,strPageName);
+                }
+
+            }
+            else{
+
+                Index indexInstance = (Index) fnDeserialize(vecOfPairs.get(0).strIndexName);
+                Vector<Pair> vecOfSubResults = indexInstance.search((Comparable)htblColNameValue.get(vecOfPairs.get(0).strColumnName));
+                for(Pair pair:vecOfSubResults) {
+                    Entry entry = tableInstance.fnSearchInPageWithClusteringKey(pair);
+                    boolean ok = true;
+                    for(String strColName:htblColNameValue.keySet())
+                        ok &= entry.getColumnValue(strColName).equals(htblColNameValue.get(strColName));
+                    if(ok)
+                        vecResults.add(entry);
+                }
+                fnSerialize(indexInstance,vecOfPairs.get(0).strIndexName);
+                for(PairOfIndexColName pair:vecOfPairs) {
+                    indexInstance = (Index)fnDeserialize(pair.strIndexName);
+                    for(Entry entry : vecResults){
+                        indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
+                    }
+                    fnSerialize(indexInstance, pair.strIndexName);
+                }
+            }
+        }
+        for(Entry entry: vecResults)
             tableInstance.fnDeleteEntry(entry);
-        }
-        fnSerialize(tableInstance,strTableName);
 
+
+        fnSerialize(tableInstance, strTableName);
 
 
     }
