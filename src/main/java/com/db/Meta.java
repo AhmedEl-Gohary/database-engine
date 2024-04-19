@@ -48,23 +48,31 @@ public final class Meta {
         return !htblColNameValue.get(clusteringKey).equals(null);
     }
 
-    private static boolean fnIsSameType(Object value, String typeName){
-        String valueType = value.getClass().getTypeName();
-        return valueType.equals(typeName);
+    private static boolean fnIsSameType(String strValue, String strTypeName){
+        try {
+            Class<?> className = Class.forName(strTypeName);
+            Constructor<?> constructor = className.getConstructor(String.class);
+            Object oValue = constructor.newInstance(strValue);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            return false;
+        }
     }
     public static boolean fnCheckTableColumns(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
         Vector<String> tableInfo = fnGetTableInfo(strTableName);
         Hashtable<String, String> columnTypes = new Hashtable<>();
         for (String columnInfo: tableInfo){
             String columnName = fnGetColumnName(columnInfo);
-            columnTypes.put(columnName, fnGetColumnType(strTableName));
+            columnTypes.put(columnName, fnGetColumnType(columnInfo));
         }
         for (String colName: htblColNameValue.keySet()){
             if (!columnTypes.contains(colName)){
                 throw new DBAppException("Invlid Column Name \'" + colName + "\'");
             }
             Object colValue = htblColNameValue.get(colName);
-            if (colValue != null && !fnIsSameType(colValue, columnTypes.get(colName))){
+            if (colValue != null && !fnIsSameType(colValue.toString(), columnTypes.get(colName))){
                 throw new DBAppException("Invlid Column \'" + colName + "\' Value \'" + colName + "\'");
             }
         }
