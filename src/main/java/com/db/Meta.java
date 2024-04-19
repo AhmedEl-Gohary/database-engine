@@ -144,8 +144,18 @@ public final class Meta {
         }
     }
 
-    public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName){
+    public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName) throws IOException {
             Vector<PairOfIndexColName> result = new Vector<>();
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String columnInfo;
+            while ((columnInfo = brReader.readLine()) != null) {
+                String[] row = columnInfo.split(",");
+                if (row[0].equals(strTableName)) {
+                    if (!row[4].equals("null")) {
+                        result.add(new PairOfIndexColName(row[1], row[4]));
+                    }
+                }
+            }
             Vector<String> vecTableInfo = fnGetTableInfo(strTableName);
             for(String strColInfo:vecTableInfo){
                 String strIndexName = fnGetIndexName(strColInfo);
