@@ -240,14 +240,49 @@ public class DBApp {
 
     private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
         Table tableInstance = (Table) fnDeserialize(sqlTerm._strTableName);
-        if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
-
-        } else if (Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
-            // TODO: complete
+        if (!sqlTerm._strOperator.equals("!=") && sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
+            return clusteringQueries(sqlTerm, tableInstance);
+        } else if (!sqlTerm._strOperator.equals("!=") && Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
+            Index index = (Index) fnDeserialize(Meta.fnGetColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName));
+            return indexQueries(sqlTerm, index);
         } else {
             return linearScanning(sqlTerm, tableInstance);
         }
+
+    }
+
+    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index) {
+        if (sqlTerm._strOperator.equals("=")) {
+            return indexPointQuery(sqlTerm, index);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+
+        }
         return null;
+    }
+
+    private Vector<Entry> indexPointQuery(SQLTerm sqlTerm, Index index) {
+        Vector<Entry> resultSet = new Vector<>();
+        Vector<Pair> vecPages = index.search((Comparable) sqlTerm._objValue);
+        for (Pair pair : vecPages) {
+            Comparable id = pair.getCmpClusteringKey();
+            String pageName = pair.getStrPageName();
+            Page page = (Page) fnDeserialize(pageName);
+            int iEntryIndex = binarySearchIndexOfEntry(page.vecTuples, id);
+            resultSet.add(page.vecTuples.get(iEntryIndex));
+        }
+        return resultSet;
+    }
+
+
+    private Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        if (sqlTerm._strOperator.equals("=")) {
+            return binarySearchClustering(sqlTerm, tableInstance);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+            return scanFromTheEnd(sqlTerm, tableInstance);
+        }
+        return scanFromTheBeginning(sqlTerm, tableInstance);
     }
 
     private Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
@@ -261,6 +296,87 @@ public class DBApp {
                 if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
                     filteredResults.add(entry);
                 }
+            }
+        }
+        return filteredResults;
+    }
+
+    private Vector<Entry> binarySearchClustering(SQLTerm sqlTerm, Table tableInstance) {
+        int iPageIndex = binarySearchPageLocation((Comparable) sqlTerm._objValue, tableInstance);
+        if (iPageIndex == -1) return new Vector<Entry>();
+        Page page = (Page) fnDeserialize(tableInstance.vecPages.get(iPageIndex));
+
+        int iEntryIdx = binarySearchIndexOfEntry(page.vecTuples, (Comparable) sqlTerm._objValue);
+        Vector<Entry> vecEntries = new Vector<>();
+        if (iEntryIdx >= 0){
+            vecEntries.add(page.vecTuples.get(iEntryIdx));
+        }
+        return vecEntries;
+    }
+
+    private int binarySearchIndexOfEntry(Vector<Entry> entries, Comparable id) {
+        int N = entries.size();
+        int l = 0, r = N - 1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (entries.get(mid).fnEntryID().equals(id)) {
+                return mid;
+            }
+            if (entries.get(mid).fnEntryID().compareTo(id) > 0) {
+                r = mid - 1;
+            } else {
+                l = mid + 1;
+            }
+        }
+        return -1;
+    }
+
+    private int binarySearchPageLocation(Comparable oTarget, Table tableInstance){
+        int N = tableInstance.vecPages.size();
+        int l = 0, r = N - 1;
+        int location = -1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (oTarget.compareTo(tableInstance.vecMin.get(mid)) < 0) {
+                r = mid - 1;
+            } else {
+                location = mid;
+                l = mid + 1;
+            }
+        }
+        return location;
+    }
+
+    private Vector<Entry> scanFromTheEnd(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (int i = tableInstance.vecPages.size() - 1; i >= 0; i--) {
+            Page page = (Page) fnDeserialize(tableInstance.vecPages.get(i));
+            for (int j = page.vecTuples.size() - 1; j >= 0; j--) {
+                Entry entry = page.vecTuples.get(j);
+                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                    return filteredResults;
+                }
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                fnMakeInstance(strColType, strColValue);
+                filteredResults.add(entry);
+            }
+        }
+        return filteredResults;
+    }
+
+    private Vector<Entry> scanFromTheBeginning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (String strPageName : tableInstance.vecPages) {
+            Page page = (Page) fnDeserialize(strPageName);
+            for (Entry entry : page.vecTuples) {
+                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                    return filteredResults;
+                }
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                fnMakeInstance(strColType, strColValue);
+                filteredResults.add(entry);
             }
         }
         return filteredResults;
