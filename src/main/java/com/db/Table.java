@@ -37,15 +37,30 @@ public class Table implements Serializable{
         }
         int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         Entry entryInstance = new Entry(htblColNameValue, this.strClusteringKeyColumn);
+        Hashtable<String, String> colIndicesNames = Meta.fnMapColumnToIndexName(strTableName);
+        Hashtable<String, Index> colIndices = new Hashtable<>();
+        for (String colName: colIndicesNames.keySet()){
+            colIndices.put(colName, (Index) DBApp.fnDeserialize(colIndicesNames.get(colName)));
+        }
         while(entryInstance != null) {
             if (iPageNumber == vecPages.size()) {
                 fnInsertNewPage(htblColNameValue);
             }
             Page pageInstance = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+            for (String colName: colIndices.keySet()){
+                Object value = entryInstance.getColumnValue(colName);
+                Index index = colIndices.get(colName);
+                if (value != null) {
+                    index.updatePage((Comparable) value, entryInstance.fnEntryID(), pageInstance.fnGetPageName());
+                }
+            }
             entryInstance = pageInstance.fnInsertEntry(entryInstance);
             vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
             DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
             iPageNumber++;
+        }
+        for (String colName: colIndices.keySet()){
+            DBApp.fnSerialize(colIndices.get(colName), colIndicesNames.get(colName));
         }
         --iPageNumber;
         vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber) + 1);

@@ -61,12 +61,7 @@ public final class Meta {
         }
     }
     public static boolean fnCheckTableColumns(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        Vector<String> tableInfo = fnGetTableInfo(strTableName);
-        Hashtable<String, String> columnTypes = new Hashtable<>();
-        for (String columnInfo: tableInfo){
-            String columnName = fnGetColumnName(columnInfo);
-            columnTypes.put(columnName, fnGetColumnType(columnInfo));
-        }
+        Hashtable<String, String> columnTypes = fnMapColumnToIndexName(strTableName);
         for (String colName: htblColNameValue.keySet()){
             if (!columnTypes.contains(colName)){
                 throw new DBAppException("Invlid Column Name \'" + colName + "\'");
@@ -255,10 +250,12 @@ public final class Meta {
     public static String fnGetIndexType(String strColumnInfo){
         return strColumnInfo.split(",")[5];
     }
-    public static Hashtable<String,String> fnMapColumnToIndexName (Vector<String> vecTableInfo){
+    public static Hashtable<String,String> fnMapColumnToIndexName (String strTableName){
+        Vector<String> vecTableInfo = fnGetTableInfo(strTableName);
         Hashtable<String,String> result = new Hashtable<>();
         for(String strColumnInfo :vecTableInfo)
-            result.put(strColumnInfo,fnGetIndexName(strColumnInfo));
+            if (!fnGetIndexName(strColumnInfo).equals("null"))
+                result.put(fnGetColumnName(strColumnInfo),fnGetIndexName(strColumnInfo));
         return result;
     }
 }
