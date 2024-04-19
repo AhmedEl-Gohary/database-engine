@@ -186,7 +186,7 @@ public class DBApp {
                     for(Entry entry : vecResults){
                         indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
                     }
-                    fnSerialize(indexInstance, pair.strIndexName);
+                    fnSerialize(indexInstance,pair.strIndexName);
                 }
             }
         }

@@ -1,6 +1,8 @@
 package com.db;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -41,12 +43,32 @@ public final class Meta {
         }
     }
 
-    public void fnCheckTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public static boolean fnCheckClusteringKey(String strTableName, Hashtable<String,Object> htblColNameValue) {
         String clusteringKey = fnGetTableClusteringKey(strTableName);
-        if (htblColNameValue.get(clusteringKey).equals(null))
-            throw new DBAppException("Clustering Key " + clusteringKey + " Cannot Be Null");
-        Vector<String> columnNames = fnGetTableColumns(strTableName);
-        //TODO: complete check
+        return !htblColNameValue.get(clusteringKey).equals(null);
+    }
+
+    private static boolean fnIsSameType(Object value, String typeName){
+        String valueType = value.getClass().getTypeName();
+        return valueType.equals(typeName);
+    }
+    public static boolean fnCheckTableColumns(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        Hashtable<String, String> columnTypes = new Hashtable<>();
+        for (String columnInfo: tableInfo){
+            String columnName = fnGetColumnName(columnInfo);
+            columnTypes.put(columnName, fnGetColumnType(strTableName));
+        }
+        for (String colName: htblColNameValue.keySet()){
+            if (!columnTypes.contains(colName)){
+                throw new DBAppException("Invlid Column Name \'" + colName + "\'");
+            }
+            Object colValue = htblColNameValue.get(colName);
+            if (colValue != null && !fnIsSameType(colValue, columnTypes.get(colName))){
+                throw new DBAppException("Invlid Column \'" + colName + "\' Value \'" + colName + "\'");
+            }
+        }
+        return true;
     }
 
     public static Vector<String> fnGetTableColumns(String strTableName) {
@@ -127,6 +149,7 @@ public final class Meta {
     }
 
 
+
     public static void showMetaData() {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
@@ -176,8 +199,9 @@ public final class Meta {
     public static String fnGetTableClusteringKey(String strTableName) {
         Vector<String> tableInfo = fnGetTableInfo(strTableName);
         for (String columnInfo: tableInfo){
-            if (fnIsClusteringKey(columnInfo))
+            if (fnIsClusteringKey(columnInfo)) {
                 return fnGetColumnName(columnInfo);
+            }
         }
         return null;
     }
