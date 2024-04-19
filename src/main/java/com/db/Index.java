@@ -19,19 +19,20 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         build();
     }
 
+
+
+    private void build() {
+        Table tableInstance = (Table) DBApp.fnDeserialize(strTableName);
+        for (String page : tableInstance.vecPages) {
+            addPage(page);
+        }
+    }
     private void addPage(String strPageName) {
         Page pageInstance = (Page) DBApp.fnDeserialize(strPageName);
         for (Entry entry : pageInstance.vecTuples) {
             Comparable clusteringKey = (Comparable) entry.fnEntryID();
             TKey key = (TKey) entry.getColumnValue(strIndexColumn);
             insert(key, new Pair(clusteringKey, pageInstance.fnGetPageName()));
-        }
-    }
-
-    private void build() {
-        Table tableInstance = (Table) DBApp.fnDeserialize(strTableName);
-        for (String page : tableInstance.vecPages) {
-            addPage(page);
         }
     }
 
@@ -86,23 +87,26 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         insert(newKey, new Pair(clusteringKey, strPageName));
     }
 
-    public void delete(TKey key, Comparable strClusteringKeyValue) {
+    public Vector<Pair> delete(TKey key, Comparable strClusteringKeyValue) {
         Vector<Pair> curValue = btree.search(key);
-        if (curValue == null) return;
+        if (curValue == null) return null;
         if (strClusteringKeyValue == null) {
-            btree.delete(key);
-            return;
+             btree.delete(key);
+             return curValue;
         }
         Vector<Pair> toBeInserted = new Vector<>();
+        Vector<Pair> toBeDeleted = new Vector<>();
         toBeInserted.addAll(curValue);
         for (Pair pair : curValue) {
             if (pair.getCmpClusteringKey().equals(strClusteringKeyValue)) {
+                toBeDeleted.add(pair);
                 toBeInserted.remove(pair);
                 btree.delete(key);
                 btree.insert(key, toBeInserted);
-                return;
+                return toBeDeleted;
             }
         }
+        return null;
     }
 
 }
@@ -112,9 +116,9 @@ class Pair implements Serializable {
     private Comparable cmpClusteringKey;
     private String strPageName;
 
-    Pair(Comparable cmpClusteringKey, String strPageNumber) {
+    Pair(Comparable cmpClusteringKey, String strPageNam) {
         this.cmpClusteringKey = cmpClusteringKey;
-        this.strPageName = strPageNumber;
+        this.strPageName = strPageNam;
     }
 
     public Comparable getCmpClusteringKey() {
