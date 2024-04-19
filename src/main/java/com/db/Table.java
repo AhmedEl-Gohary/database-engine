@@ -31,7 +31,7 @@ public class Table implements Serializable{
         vecCountRows.add(0);
     }
 
-    public void fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public String fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
         if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
@@ -47,7 +47,23 @@ public class Table implements Serializable{
             DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
             iPageNumber++;
         }
-        vecCountRows.set(iPageNumber - 1, vecCountRows.get(iPageNumber - 1) + 1);
+        --iPageNumber;
+        vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber) + 1);
+        return vecPages.get(iPageNumber);
+    }
+    public Entry fnSearchEntryWithClusteringKey(Hashtable<String,Object> htblColNameValue,String strClusteringKeyColumn) throws DBAppException {
+        if (htblColNameValue.get(strClusteringKeyColumn) == null) {
+            throw new DBAppException("Clustering Key cannot be null!");
+        }
+        Comparable cmpClusteringKey = (Comparable) htblColNameValue.get(strClusteringKeyColumn);
+        int iPageNumber = fnBSPageLocation(cmpClusteringKey);
+        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
+        int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
+        if (iEntryIdx >= 0){
+            return pageBlock.vecTuples.get(iEntryIdx);
+        }
+        return null;
     }
 
     public void fnDeleteEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{

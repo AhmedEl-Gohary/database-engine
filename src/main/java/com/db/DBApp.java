@@ -70,11 +70,18 @@ public class DBApp {
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
     public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        // TODO: update the index part if exists
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
         Table tableInstance = (Table) fnDeserialize(strTableName);
-        tableInstance.fnInsertEntry(htblColNameValue);
+        String strPageName = tableInstance.fnInsertEntry(htblColNameValue);
+        String strClusteringKey = Meta.fnGetTableClusteringKey(strTableName);
+        Vector<Meta.PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
+        for(Meta.PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
+            Index indexInstance = (Index)fnDeserialize(pairOfIndexColName.strIndexName);
+            indexInstance.insert((Comparable) htblColNameValue.get(pairOfIndexColName.strColumnName),
+                    new Pair((Comparable) htblColNameValue.get(strClusteringKey),strPageName));
+            fnSerialize(indexInstance,pairOfIndexColName.strIndexName);
+        }
         fnSerialize(tableInstance, strTableName);
     }
 
@@ -95,6 +102,23 @@ public class DBApp {
         Hashtable<String, Object> htblEntryKey = new Hashtable<>();
         htblEntryKey.put(strClusteringKeyName, objClusteringKeyValue);
         tableInstance.updateEntry(htblEntryKey,htblColNameValue);
+
+        // index part
+        Vector<String> vecTableInfo = Meta.fnGetTableInfo(strTableName);
+        Hashtable<String,String> htblColumnIndexName = Meta.fnMapColumnToIndexName(vecTableInfo);
+        for(String strColName:htblColNameValue.keySet()){
+            if(!htblColumnIndexName.get(strColName).equals("null")){
+                Index indexInstance = (Index) fnDeserialize(htblColumnIndexName.get(strColName));
+                Comparable key = (Comparable) tableInstance.
+                                        fnSearchEntryWithClusteringKey(htblEntryKey,strClusteringKeyName).
+                                        getColumnValue(strColName);
+                Vector<Pair> toBeChanged = indexInstance.delete(key,(Comparable) objClusteringKeyValue);
+                for (Pair pair : toBeChanged) {
+                    indexInstance.insert((Comparable)htblColNameValue.get(strColName),pair);
+                }
+                fnSerialize(indexInstance,htblColumnIndexName.get(strColName));
+            }
+        }
         fnSerialize(tableInstance, strTableName);
     }
     // name = "ahmed" and age = 20 and gender = "male"
