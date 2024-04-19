@@ -80,11 +80,11 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         }
     }
 
-    public void update(TKey key, TKey newKey) {
-        Vector<Pair> curValue = btree.search(key);
-        if (curValue == null) return;
-        btree.delete(key);
-        btree.insert(newKey, curValue);
+    public void update(TKey key, Comparable clusteringKey, TKey newKey) {
+        String strPageName = search(key, clusteringKey);
+        if (strPageName == null) return;
+        delete(key, clusteringKey);
+        insert(newKey, new Pair(clusteringKey, strPageName));
     }
 
     public Vector<Pair> delete(TKey key, Comparable strClusteringKeyValue) {
