@@ -139,9 +139,11 @@ public final class Meta {
         }
     }
 
-    public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName) throws IOException {
+    public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName)  {
+        try {
             Vector<PairOfIndexColName> result = new Vector<>();
-            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            BufferedReader brReader = null;
+            brReader = new BufferedReader(new FileReader(DBApp.file));
             String columnInfo;
             while ((columnInfo = brReader.readLine()) != null) {
                 String[] row = columnInfo.split(",");
@@ -159,6 +161,11 @@ public final class Meta {
                     result.add(new PairOfIndexColName(strColName,strIndexName));
             }
             return result;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
