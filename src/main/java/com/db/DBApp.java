@@ -253,19 +253,27 @@ public class DBApp {
 
     }
 
-    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index) {
+    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index) throws DBAppException {
         if (sqlTerm._strOperator.equals("=")) {
-            return indexPointQuery(sqlTerm, index);
+            return insertFromPagesToEntries(index.search((Comparable) sqlTerm._objValue));
         }
-        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
-
+        if (sqlTerm._strOperator.equals(">=")) {
+            return insertFromPagesToEntries(index.findGreaterThanOrEqualKey((Comparable) sqlTerm._objValue));
         }
-        return null;
+        if (sqlTerm._strOperator.equals(">")) {
+            return insertFromPagesToEntries(index.findGreaterThanKey((Comparable) sqlTerm._objValue));
+        }
+        if (sqlTerm._strOperator.equals("<=")) {
+            return insertFromPagesToEntries(index.findLessThanOrEqualKey((Comparable) sqlTerm._objValue));
+        }
+        if (sqlTerm._strOperator.equals("<")) {
+            return insertFromPagesToEntries(index.findLessThanKey((Comparable) sqlTerm._objValue));
+        }
+        throw new DBAppException("Invalid Operator!");
     }
 
-    private Vector<Entry> indexPointQuery(SQLTerm sqlTerm, Index index) {
+    private Vector<Entry> insertFromPagesToEntries(Vector<Pair> vecPages) {
         Vector<Entry> resultSet = new Vector<>();
-        Vector<Pair> vecPages = index.search((Comparable) sqlTerm._objValue);
         for (Pair pair : vecPages) {
             Comparable id = pair.getCmpClusteringKey();
             String pageName = pair.getStrPageName();
@@ -284,7 +292,10 @@ public class DBApp {
         if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
             return scanFromTheEnd(sqlTerm, tableInstance);
         }
-        return scanFromTheBeginning(sqlTerm, tableInstance);
+        if (sqlTerm._strOperator.equals("<") || sqlTerm._strOperator.equals("<=")) {
+            return scanFromTheBeginning(sqlTerm, tableInstance);
+        }
+        throw new DBAppException("Invalid Operator!");
     }
 
     private Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
@@ -424,7 +435,7 @@ public class DBApp {
 
             return new Vector<>(union);
         }
-        throw new DBAppException("Operator is not valid!");
+        throw new DBAppException("Invalid Operator!");
     }
 
 

@@ -67,17 +67,20 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         result.addAll(targetValue);
         return result;
     }
+
     public Vector<Pair> findMinInIndex(){
         return this.btree.findMinInTree();
     }
+
     public Vector<Pair> findMaxInIndex(){
         return this.btree.findMaxInTree();
     }
+
     public Vector<Pair> findGreaterThanKey(TKey key){
         Vector<Pair> ans =new Vector<>();
         BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
         l:while(treeNode != null ){
-            for(int i=treeNode.getKeyCount()-1;i>-1;i--){
+            for(int i=treeNode.getKeyCount()-1; i > -1; i--) {
                 if(treeNode.getKey(i).compareTo(key)>0){
                     if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
                         ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
@@ -104,7 +107,9 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
             treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
         }
         return ans;
-    }   public Vector<Pair> findLessThanKey(TKey key){
+    }
+
+    public Vector<Pair> findLessThanKey(TKey key){
         Vector<Pair> ans =new Vector<>();
 
         BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
@@ -119,7 +124,9 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
             treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
         }
         return ans;
-    }   public Vector<Pair> findLessThanOrEqualKey(TKey key){
+    }
+
+    public Vector<Pair> findLessThanOrEqualKey(TKey key){
         Vector<Pair> ans =new Vector<>();
 
         BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
