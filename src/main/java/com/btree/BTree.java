@@ -1,7 +1,5 @@
 package com.btree;
 
-import java.io.*;
-
 /**
  * A B+ tree
  * Since the structures and behaviors between internal node and external node are different,
@@ -16,6 +14,15 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
         this.root = new BTreeLeafNode<TKey, TValue>();
     }
 
+    public String getTreeStructure(TKey minKey){
+        StringBuilder st = new StringBuilder();
+        BTreeLeafNode<TKey, TValue> curNode = findLeafNodeShouldContainKey(minKey);
+         while(curNode != null){
+             st.append(curNode );
+             curNode = (BTreeLeafNode<TKey, TValue>) curNode.rightSibling;
+         }
+         return st.toString();
+    }
     /**
      * Insert a new key and its associated value into the B+ tree.
      */
@@ -61,6 +68,27 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
         BTreeNode<TKey> node = this.root;
         while (node.getNodeType() == TreeNodeType.InnerNode) {
             node = ((BTreeInnerNode<TKey>)node).getChild( node.search(key) );
+        }
+
+        return (BTreeLeafNode<TKey, TValue>)node;
+    }
+    private BTreeLeafNode<TKey,TValue> findMinInTree(){
+
+        BTreeNode<TKey> node = this.root;
+        while (true) {
+            if(node instanceof BTreeInnerNode<TKey>)
+                node = ((BTreeInnerNode<TKey>)node).findLeftElement();
+            else break;
+        }
+
+        return (BTreeLeafNode<TKey, TValue>)node;
+    }
+    private BTreeLeafNode<TKey,TValue> findMaxInTree(){
+        BTreeNode<TKey> node = this.root;
+        while (true) {
+            if(node instanceof BTreeInnerNode<TKey>)
+                node = ((BTreeInnerNode<TKey>)node).findRightElement();
+            else break;
         }
 
         return (BTreeLeafNode<TKey, TValue>)node;

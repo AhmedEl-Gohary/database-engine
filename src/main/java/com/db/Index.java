@@ -8,6 +8,7 @@ import java.util.Vector;
 public class Index<TKey extends Comparable<TKey>> implements Serializable {
     BTree<TKey, Vector<Pair>> btree;
     String strIndexName, strTableName, strIndexColumn;
+    TKey minKey = null, maxKey = null;
 
     public Index() {}
 
@@ -18,8 +19,6 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         btree = new BTree<>();
         build();
     }
-
-
 
     private void build() {
         Table tableInstance = (Table) DBApp.fnDeserialize(strTableName);
@@ -37,6 +36,12 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     }
 
     public void insert(TKey key, Pair value) {
+        if(minKey == null)
+            minKey = key;
+        else{
+            if( minKey.compareTo(key) > 0)
+                minKey = key;
+        }
         Vector<Pair> curValue = btree.search(key);
         if (curValue == null) { // need to insert
             Vector<Pair> vecEntry = new Vector<>();
@@ -82,6 +87,12 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     public void update(TKey key, Comparable clusteringKey, TKey newKey) {
         String strPageName = search(key, clusteringKey);
         if (strPageName == null) return;
+        if(minKey == null)
+            minKey = key;
+        else{
+            if( minKey.compareTo(key) > 0)
+                minKey = key;
+        }
         delete(key, clusteringKey);
         insert(newKey, new Pair(clusteringKey, strPageName));
     }
@@ -106,6 +117,10 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
             }
         }
         return null;
+    }
+    @Override
+    public String toString(){
+        return btree.getTreeStructure(minKey);
     }
 
 }

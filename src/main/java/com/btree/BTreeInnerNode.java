@@ -9,6 +9,14 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
         this.keys = new Object[INNERORDER + 1];
         this.children = new Object[INNERORDER + 2];
     }
+    public BTreeNode<TKey> findLeftElement(){
+        return (BTreeNode<TKey>) this.children[0];
+    }
+    public BTreeNode<TKey> findRightElement(){
+        int i = 0;
+        while(this.children[i]!=null)i++;
+        return (BTreeNode<TKey>) this.children[i-1];
+    }
 
     @SuppressWarnings("unchecked")
     public BTreeNode<TKey> getChild(int index) {
