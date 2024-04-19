@@ -242,7 +242,8 @@ public class DBApp {
         if (!sqlTerm._strOperator.equals("!=") && sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
             return clusteringQueries(sqlTerm, tableInstance);
         } else if (!sqlTerm._strOperator.equals("!=") && Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
-            // TODO: complete
+            Index index = (Index) fnDeserialize(Meta.fnGetColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName));
+
         } else {
             return linearScanning(sqlTerm, tableInstance);
         }
@@ -263,6 +264,16 @@ public class DBApp {
             }
         }
         return filteredResults;
+    }
+
+    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index, Table tableInstance) {
+        if (sqlTerm._strOperator.equals("=")) {
+            return binarySearchIndex(sqlTerm, tableInstance);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+            return scanFromTheEnd(sqlTerm, tableInstance);
+        }
+        return scanFromTheBeginning(sqlTerm, tableInstance);
     }
 
     private Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
