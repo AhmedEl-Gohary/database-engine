@@ -6,36 +6,58 @@ import com.btree.BTree;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Properties;
-import java.util.Random;
-import java.util.Vector;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-//        String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
-//        String appConfigPath = rootPath + "DBApp.config";
-//
-//        Properties p = new Properties();
-//        p.load(new FileInputStream(appConfigPath));
-//
-//        String rows = p.getProperty("MaximumRowsCountinPage");
-//        System.out.println(rows);
-            BTree<Integer, Integer> btree = new BTree<>();
-            Random r = new Random();
-            for(int i=0;i<12;i++){
-                int x = r.nextInt(3);
-                int y = r.nextInt(100);
-                int z = r.nextInt(3);
-//                Vector<Integer> v = new Vector<>();
-//                v.add(y);v.add(z);
-                btree.insert(x,y);
-                System.out.println(x+" "+y+" "+z);
-            }
-            System.out.println(btree.findMinInTree());
-            System.out.println(btree.findMaxInTree());
 
 
+        String strTableName = "Student";
+        Hashtable htblColNameType = new Hashtable();
+        htblColNameType.put("id", "java.lang.Integer");
+        htblColNameType.put("name", "java.lang.String");
+        htblColNameType.put("gpa", "java.lang.Double");
+        try {
+            DBApp dbApp = new DBApp();
+            dbApp.createTable(strTableName, "id", htblColNameType);
+            HashSet<Integer> hs = new HashSet<>();
+            Hashtable<String, Object> ht = new Hashtable<>();
+            ht.put("name", "ahmed");
+            ht.put("id", 3);
+            ht.put("gpa", 2);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "yasser");
+            ht.put("id", 1);
+            ht.put("gpa", 1);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "tawfik");
+            ht.put("id", 2);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "abdelrahim");
+            ht.put("id", 4);
+            ht.put("gpa", 1);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "gohary");
+            ht.put("id", 5);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+            dbApp.createIndex(strTableName,"gpa","Index");
+            Index index = (Index)DBApp.fnDeserialize("Index");
+            System.out.println(index.findMaxInIndex());
+            System.out.println(index.findMinInIndex());
+            System.out.println(index.findGreaterThanKey(2));
+            System.out.println(index.findGreaterThanOrEqualKey(1));
+            System.out.println(index.findLessThanOrEqualKey(2));
+            DBApp.fnSerialize(index,"Index");
 
 
+        } catch (DBAppException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

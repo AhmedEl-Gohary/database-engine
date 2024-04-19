@@ -63,6 +63,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
         }
     }
 
+
     /**
      * Search the leaf node which should contain the specified key
      */
@@ -76,8 +77,8 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
         return (BTreeLeafNode<TKey, TValue>)node;
     }
     public TValue findMinInTree(){
-
         BTreeNode<TKey> node = this.root;
+        if(root == null) return null;
         while (true) {
             if(node instanceof BTreeInnerNode<TKey>)
                 node = ((BTreeInnerNode<TKey>)node).findLeftElement();
@@ -88,15 +89,40 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
     }
     public TValue findMaxInTree(){
         BTreeNode<TKey> node = this.root;
+        if(root == null) return null;
         while (true) {
             if(node instanceof BTreeInnerNode<TKey>)
                 node = ((BTreeInnerNode<TKey>)node).findRightElement();
             else break;
         }
 
+
         return ((BTreeLeafNode<TKey,TValue>)node).getLastValue();
     }
 
+    public BTreeLeafNode<TKey,TValue> findMaxInTreeNode(){
+        BTreeNode<TKey> node = this.root;
+        while (true) {
+            if(node instanceof BTreeInnerNode<TKey>)
+                node = ((BTreeInnerNode<TKey>)node).findRightElement();
+            else break;
+        }
+
+
+        return ((BTreeLeafNode<TKey,TValue>)node);
+    }
+    public BTreeLeafNode<TKey,TValue> findMinInTreeNode(){
+        BTreeNode<TKey> node = this.root;
+        if(root == null) return null;
+
+        while (true) {
+            if(node instanceof BTreeInnerNode<TKey>)
+                node = ((BTreeInnerNode<TKey>)node).findLeftElement();
+            else break;
+        }
+
+        return ((BTreeLeafNode<TKey,TValue>)node);
+    }
     static class Tuple implements java.io.Serializable {
         Object[] record;
 

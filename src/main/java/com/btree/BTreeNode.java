@@ -6,7 +6,7 @@ enum TreeNodeType {
     LeafNode
 }
 
-abstract class BTreeNode<TKey extends Comparable<TKey>> implements java.io.Serializable     {
+public abstract class BTreeNode<TKey extends Comparable<TKey>> implements java.io.Serializable     {
     protected Object[] keys;
     protected int keyCount;
     protected BTreeNode<TKey> parentNode;
@@ -86,8 +86,6 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> implements java.io.Seria
     protected abstract BTreeNode<TKey> split();
 
     protected abstract BTreeNode<TKey> pushUpKey(TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightNode);
-
-
 
 
 

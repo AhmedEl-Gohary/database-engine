@@ -1,7 +1,7 @@
 package com.btree;
 
 
-class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKey> {
+public class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKey> {
     protected final static int LEAFORDER = 4;
     private Object[] values;
     // TODO  link to the next leafNode

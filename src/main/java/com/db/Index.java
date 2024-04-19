@@ -1,9 +1,11 @@
 package com.db;
 
 
-import com.btree.BTree;
+import com.btree.*;
 
+import javax.swing.plaf.metal.MetalIconFactory;
 import java.io.Serializable;
+import java.lang.reflect.TypeVariable;
 import java.util.Random;
 import java.util.Vector;
 
@@ -65,6 +67,75 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         result.addAll(targetValue);
         return result;
     }
+    public Vector<Pair> findMinInIndex(){
+        return this.btree.findMinInTree();
+    }
+    public Vector<Pair> findMaxInIndex(){
+        return this.btree.findMaxInTree();
+    }
+    public Vector<Pair> findGreaterThanKey(TKey key){
+        Vector<Pair> ans =new Vector<>();
+        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
+        l:while(treeNode != null ){
+            for(int i=treeNode.getKeyCount()-1;i>-1;i--){
+                if(treeNode.getKey(i).compareTo(key)>0){
+                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
+                        ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                }
+                else break l;
+            }
+            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
+        }
+        return ans;
+
+    }
+    public Vector<Pair> findGreaterThanOrEqualKey(TKey key){
+
+        Vector<Pair> ans =new Vector<>();
+        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
+        l:while(treeNode != null ){
+            for(int i=treeNode.getKeyCount()-1;i>-1;i--){
+                if(treeNode.getKey(i).compareTo(key)>=0){
+                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
+                        ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                }
+                else break l;
+            }
+            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
+        }
+        return ans;
+    }   public Vector<Pair> findLessThanKey(TKey key){
+        Vector<Pair> ans =new Vector<>();
+
+        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
+        l:while(treeNode != null ){
+            for(int i=0;i<treeNode.getKeyCount();i++){
+                if(treeNode.getKey(i).compareTo(key)<0){
+                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
+                        ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                }
+                else break l;
+            }
+            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
+        }
+        return ans;
+    }   public Vector<Pair> findLessThanOrEqualKey(TKey key){
+        Vector<Pair> ans =new Vector<>();
+
+        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
+        l:while(treeNode != null ){
+            for(int i=0;i<treeNode.getKeyCount();i++){
+                if(treeNode.getKey(i).compareTo(key)<=0){
+                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
+                    ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                }
+                else break l;
+            }
+            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
+        }
+        return ans;
+    }
+
 
     public String search(TKey key, Comparable strClusteringKeyValue){
         Vector<Pair> targetValue = btree.search(key);
