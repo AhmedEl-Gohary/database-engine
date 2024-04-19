@@ -60,26 +60,46 @@ public class Table implements Serializable{
         Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
+        DBApp.fnSerialize(pageBlock,vecPages.get(iPageNumber));
         if (iEntryIdx >= 0){
             return pageBlock.vecTuples.get(iEntryIdx);
         }
         return null;
     }
-
-    public void fnDeleteEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
+    public Entry fnSearchInPageWithClusteringKey(String strPageName,Hashtable<String,Object> htblColNameValue) throws DBAppException {
+        if (htblColNameValue.get(strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
-        int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
-        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        Page pageBlock = (Page) DBApp.fnDeserialize(strPageName);
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
+        DBApp.fnSerialize(pageBlock,strPageName);
         if (iEntryIdx >= 0){
-            pageBlock.vecTuples.remove(iEntryIdx);
-
+            return pageBlock.vecTuples.get(iEntryIdx);
         }
-        //TODO: delete empty pages
+        return null;
     }
+    public Entry fnSearchInPageWithClusteringKey(Pair pair) throws DBAppException {
+        Hashtable<String,Object> htblColNameValue = new Hashtable<>();
+        htblColNameValue.put(strClusteringKeyColumn,pair.getCmpClusteringKey());
+        return fnSearchInPageWithClusteringKey(pair.getStrPageName(),htblColNameValue);
+    }
+
+
+//    public void fnDeleteEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
+//        if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
+//            throw new DBAppException("Clustering Key cannot be null!");
+//        }
+//        int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
+//        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+//        Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
+//        int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
+//        if (iEntryIdx >= 0){
+//            pageBlock.vecTuples.remove(iEntryIdx);
+//
+//        }
+//        //TODO: delete empty pages
+//    }
 
     public int fnCountPages(){
         return vecPages.size();

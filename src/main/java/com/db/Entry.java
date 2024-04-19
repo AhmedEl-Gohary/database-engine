@@ -19,7 +19,7 @@ public class Entry implements Serializable, Comparable<Entry>{
     }
 
     public Comparable fnEntryID() {
-        return (Comparable)htblTuple.get(strClusteringKey);
+        return (Comparable) htblTuple.get(strClusteringKey);
     }
 
     @Override

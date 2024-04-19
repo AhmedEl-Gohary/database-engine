@@ -69,14 +69,14 @@ public class DBApp {
 
     // following method inserts one row only.
     // htblColNameValue must include a value for the primary key
-    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
         Table tableInstance = (Table) fnDeserialize(strTableName);
         String strPageName = tableInstance.fnInsertEntry(htblColNameValue);
         String strClusteringKey = Meta.fnGetTableClusteringKey(strTableName);
-        Vector<Meta.PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
-        for(Meta.PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
+        Vector<PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
+        for(PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
             Index indexInstance = (Index)fnDeserialize(pairOfIndexColName.strIndexName);
             indexInstance.insert((Comparable) htblColNameValue.get(pairOfIndexColName.strColumnName),
                     new Pair((Comparable) htblColNameValue.get(strClusteringKey),strPageName));
@@ -90,7 +90,7 @@ public class DBApp {
     // htblColNameValue holds the key and new value
     // htblColNameValue will not include clustering key as column name
     // strClusteringKeyValue is the value to look for to find the row to update.
-    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+    public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
 
@@ -104,20 +104,18 @@ public class DBApp {
         tableInstance.fnUpdateEntry(htblEntryKey,htblColNameValue);
 
         // index part
-        Vector<String> vecTableInfo = Meta.fnGetTableInfo(strTableName);
-        Hashtable<String,String> htblColumnIndexName = Meta.fnMapColumnToIndexName(vecTableInfo);
-        for(String strColName:htblColNameValue.keySet()){
-            if(!htblColumnIndexName.get(strColName).equals("null")){
-                Index indexInstance = (Index) fnDeserialize(htblColumnIndexName.get(strColName));
-                Comparable key = (Comparable) tableInstance.
-                                        fnSearchEntryWithClusteringKey(htblEntryKey,strClusteringKeyName).
-                                        getColumnValue(strColName);
-                Vector<Pair> toBeChanged = indexInstance.delete(key,(Comparable) objClusteringKeyValue);
-                for (Pair pair : toBeChanged) {
-                    indexInstance.insert((Comparable)htblColNameValue.get(strColName),pair);
-                }
-                fnSerialize(indexInstance,htblColumnIndexName.get(strColName));
+        Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
+        for(PairOfIndexColName pair: vecOfPairs){
+            Index indexInstance = (Index) fnDeserialize(pair.strIndexName);
+            Comparable key = (Comparable) tableInstance.
+                                    fnSearchEntryWithClusteringKey(htblEntryKey,strClusteringKeyName).
+                                    getColumnValue(pair.strColumnName);
+            Vector<Pair> toBeChanged = indexInstance.delete(key,(Comparable) objClusteringKeyValue);
+            for (Pair pairtoBeChanged : toBeChanged) {
+                indexInstance.insert((Comparable)htblColNameValue.get(pair.strColumnName),pairtoBeChanged);
             }
+            fnSerialize(indexInstance,pair.strIndexName);
+
         }
         fnSerialize(tableInstance, strTableName);
     }
@@ -128,12 +126,8 @@ public class DBApp {
     // htblColNameValue holds the key and value. This will be used in search
     // to identify which rows/tuples to delete.
     // htblColNameValue enteries are ANDED together
-    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
-        /* cases:
-        1. ID is present
-        2.
-         */
-        // TODO: update the index if it exists
+    public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException {
+
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
 
@@ -142,28 +136,63 @@ public class DBApp {
                 throw new DBAppException("Column named: " + strColumnName + " doesn't exist!") ;
             }
         }
-        SQLTerm[] arrSQLTerms;
-        arrSQLTerms = new SQLTerm[htblColNameValue.size()];
-        for (String strColumnName : htblColNameValue.keySet()) {
-            arrSQLTerms[0]._strTableName = strTableName;
-            arrSQLTerms[0]._strColumnName= strColumnName;
-            arrSQLTerms[0]._strOperator = "=";
-            arrSQLTerms[0]._objValue = htblColNameValue.get(strColumnName);
-        }
-        String[] strarrOperators = new String[htblColNameValue.size()-1];
-        Arrays.fill(strarrOperators, "AND");
-        Iterator itInstance = selectFromTable(arrSQLTerms,strarrOperators);
 
-        TreeSet<Entry> resultSet = new TreeSet<>();
-        while (itInstance.hasNext()) {
-            resultSet.add((Entry) itInstance.next());
+        // here i am, therefore i code
+
+        Vector<Entry> vecResults = new Vector<>();
+        Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
+
+        Table tableInstance = (Table)fnDeserialize(strTableName);
+        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
+        if(htblColNameValue.containsKey(strClusteringKeyName)){
+            Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
+            vecResults.add(entryInstance);
         }
-        Table tableInstance = (Table) fnDeserialize(strTableName);
-        for(Entry entry:resultSet){
+        else{
+            Vector<String> tableInfo = Meta.fnGetTableInfo(strTableName);
+            if(vecOfPairs.isEmpty()){
+                // not index found;
+                // linear search
+                for (String strPageName : tableInstance.vecPages) {
+                    Page page = (Page) fnDeserialize(strPageName);
+                    for (Entry entry : page.vecTuples) {
+                        boolean ok = true;
+                        for(String strColName:htblColNameValue.keySet())
+                            ok &= entry.getColumnValue(strColName).equals(htblColNameValue.get(strColName));
+                        if(ok)
+                            vecResults.add(entry);
+                    }
+                    fnSerialize(page,strPageName);
+                }
+
+            }
+            else{
+
+                Index indexInstance = (Index) fnDeserialize(vecOfPairs.get(0).strIndexName);
+                Vector<Pair> vecOfSubResults = indexInstance.search((Comparable)htblColNameValue.get(vecOfPairs.get(0).strColumnName));
+                for(Pair pair:vecOfSubResults) {
+                    Entry entry = tableInstance.fnSearchInPageWithClusteringKey(pair);
+                    boolean ok = true;
+                    for(String strColName:htblColNameValue.keySet())
+                        ok &= entry.getColumnValue(strColName).equals(htblColNameValue.get(strColName));
+                    if(ok)
+                        vecResults.add(entry);
+                }
+                fnSerialize(indexInstance,vecOfPairs.get(0).strIndexName);
+                for(PairOfIndexColName pair:vecOfPairs) {
+                    indexInstance = (Index)fnDeserialize(pair.strIndexName);
+                    for(Entry entry : vecResults){
+                        indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
+                    }
+                    fnSerialize(indexInstance,pair.strIndexName);
+                }
+            }
+        }
+        for(Entry entry: vecResults)
             tableInstance.fnDeleteEntry(entry);
-        }
-        fnSerialize(tableInstance,strTableName);
 
+
+        fnSerialize(tableInstance, strTableName);
 
 
     }
@@ -210,9 +239,9 @@ public class DBApp {
 
     private Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
         Table tableInstance = (Table) fnDeserialize(sqlTerm._strTableName);
-        if (sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
-
-        } else if (Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
+        if (!sqlTerm._strOperator.equals("!=") && sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
+            return clusteringQueries(sqlTerm, tableInstance);
+        } else if (!sqlTerm._strOperator.equals("!=") && Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
             // TODO: complete
         } else {
             return linearScanning(sqlTerm, tableInstance);
@@ -231,6 +260,97 @@ public class DBApp {
                 if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
                     filteredResults.add(entry);
                 }
+            }
+        }
+        return filteredResults;
+    }
+
+    private Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        if (sqlTerm._strOperator.equals("=")) {
+            return binarySearchIndex(sqlTerm, tableInstance);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+            return scanFromTheEnd(sqlTerm, tableInstance);
+        }
+        return scanFromTheBeginning(sqlTerm, tableInstance);
+    }
+
+    private Vector<Entry> binarySearchIndex(SQLTerm sqlTerm, Table tableInstance) {
+        int iPageIndex = binarySearchPageLocation((Comparable) sqlTerm._objValue, tableInstance);
+        if (iPageIndex == -1) return new Vector<Entry>();
+        Page page = (Page) fnDeserialize(tableInstance.vecPages.get(iPageIndex));
+
+        int iEntryIdx = binarySearchIndexOfEntry(page.vecTuples, (Comparable) sqlTerm._objValue);
+        Vector<Entry> vecEntries = new Vector<>();
+        if (iEntryIdx >= 0){
+            vecEntries.add(page.vecTuples.get(iEntryIdx));
+        }
+        return vecEntries;
+    }
+
+    private int binarySearchIndexOfEntry(Vector<Entry> entries, Comparable id) {
+        int N = entries.size();
+        int l = 0, r = N - 1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (entries.get(mid).fnEntryID().equals(id)) {
+                return mid;
+            }
+            if (entries.get(mid).fnEntryID().compareTo(id) > 0) {
+                r = mid - 1;
+            } else {
+                l = mid + 1;
+            }
+        }
+        return -1;
+    }
+
+    private int binarySearchPageLocation(Comparable oTarget, Table tableInstance){
+        int N = tableInstance.vecPages.size();
+        int l = 0, r = N - 1;
+        int location = -1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (oTarget.compareTo(tableInstance.vecMin.get(mid)) < 0) {
+                r = mid - 1;
+            } else {
+                location = mid;
+                l = mid + 1;
+            }
+        }
+        return location;
+    }
+
+    private Vector<Entry> scanFromTheEnd(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (int i = tableInstance.vecPages.size() - 1; i >= 0; i--) {
+            Page page = (Page) fnDeserialize(tableInstance.vecPages.get(i));
+            for (int j = page.vecTuples.size() - 1; j >= 0; j--) {
+                Entry entry = page.vecTuples.get(j);
+                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                    return filteredResults;
+                }
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                fnMakeInstance(strColType, strColValue);
+                filteredResults.add(entry);
+            }
+        }
+        return filteredResults;
+    }
+
+    private Vector<Entry> scanFromTheBeginning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (String strPageName : tableInstance.vecPages) {
+            Page page = (Page) fnDeserialize(strPageName);
+            for (Entry entry : page.vecTuples) {
+                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                    return filteredResults;
+                }
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                fnMakeInstance(strColType, strColValue);
+                filteredResults.add(entry);
             }
         }
         return filteredResults;
@@ -278,7 +398,76 @@ public class DBApp {
         }
         throw new DBAppException("Operator is not valid!");
     }
+    public static void fnSerialize(Serializable serObj, String strObjectName){
+        try {
+            FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(serObj);
+            out.close();
+            fileOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public static boolean fnIsExistingFile(String strObjectName) {
+        Object oObj = null;
+        try {
+            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            oObj = in.readObject();
+            in.close();
+            fileIn.close();
+            return true;
+        } catch (FileNotFoundException e) {
+            return false;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static Object fnDeserialize(String strObjectName){
+        Object oObj = null;
+        try {
+            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            oObj =  in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return oObj;
+    }
+    public static void fnDeleteFile(String strObjectName){
+        File serializedFile = new File(strObjectName);
+        if (serializedFile.exists())
+            serializedFile.delete();
+
+    }
+
+    public static Object fnMakeInstance(String strColType, String strColValue) throws DBAppException {
+        try {
+            Class<?> className = Class.forName(strColType);
+            Constructor<?> constructor = className.getConstructor(String.class);
+            return constructor.newInstance(strColValue);
+        } catch (ClassNotFoundException e) {
+            throw new DBAppException("Invalid Column Type " + strColType);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new DBAppException("Invalid Column Value " + strColType);
+        }
+    }
+    private static void removeTable(String strTableName) {
+        Table table = (Table) fnDeserialize(strTableName);
+        for (String page : table.vecPages) {
+            File file = new File(page + ".class");
+            file.delete();
+        }
+        Meta.deleteTableMetaData(strTableName);
+        File file = new File(strTableName + ".class");
+        file.delete();
+    }
 
     public static void main( String[] args ) throws DBAppException {
         String strTableName = "Student";
@@ -310,7 +499,51 @@ public class DBApp {
 //            dbApp.createIndex(table.strTableName, "name", "test" );
 
             System.out.println();
+            dbApp.createTable(strTableName,"id",htblColNameType);
+            HashSet<Integer> hs = new HashSet<>();
+            Hashtable<String,Object> ht = new Hashtable<>();
+            ht.put("name", "ahmed");
+            ht.put("id", 3);
+            ht.put("gpa", 2);
+            dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", "yasser");
+            ht.put("id", 1);
+            ht.put("gpa", 1);
+            dbApp.insertIntoTable(strTableName, ht);
 
+            ht.put("name", "tawfik");
+            ht.put("id", 2);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "abdelwahab");
+            ht.put("id", 4);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "Gohary");
+            ht.put("id", 5);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", "hassan");
+            ht.put("id", 6);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "elbakly");
+            ht.put("id", 7);
+            ht.put("gpa", 3);
+            dbApp.insertIntoTable(strTableName, ht);
+             table = (Table) fnDeserialize(strTableName);
+            System.out.println(table);
+            SQLTerm[] arr = new SQLTerm[1];
+            arr[0] = new SQLTerm();
+            arr[0]._strColumnName = "id";
+            arr[0]._strOperator = "!=";
+            arr[0]._strTableName = "Student";
+            arr[0]._objValue = 3;
+            System.out.println(dbApp.applyCondition(arr[0]));
+            removeTable(strTableName);
 //            ht.remove("id");
 //            ht.put("gpa", 0.7);
 //            String strIdxName = "Index";
@@ -414,75 +647,6 @@ public class DBApp {
 
 
 
-    public static void fnSerialize(Serializable serObj, String strObjectName){
-        try {
-            FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(serObj);
-            out.close();
-            fileOut.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
-    public static boolean fnIsExistingFile(String strObjectName) {
-        Object oObj = null;
-        try {
-            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            oObj = in.readObject();
-            in.close();
-            fileIn.close();
-            return true;
-        } catch (FileNotFoundException e) {
-            return false;
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static Object fnDeserialize(String strObjectName){
-        Object oObj = null;
-        try {
-            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            oObj =  in.readObject();
-            in.close();
-            fileIn.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return oObj;
-    }
-    public static void fnDeleteFile(String strObjectName){
-        File serializedFile = new File(strObjectName);
-        if (serializedFile.exists())
-                serializedFile.delete();
-
-        }
-
-    public static Object fnMakeInstance(String strColType, String strColValue) throws DBAppException {
-        try {
-            Class<?> className = Class.forName(strColType);
-            Constructor<?> constructor = className.getConstructor(String.class);
-            return constructor.newInstance(strColValue);
-        } catch (ClassNotFoundException e) {
-            throw new DBAppException("Invalid Column Type " + strColType);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new DBAppException("Invalid Column Value " + strColType);
-        }
-    }
-    private static void removeTable(String strTableName) {
-        Table table = (Table) fnDeserialize(strTableName);
-        for (String page : table.vecPages) {
-            File file = new File(page + ".class");
-            file.delete();
-        }
-        Meta.deleteTableMetaData(strTableName);
-        File file = new File(strTableName + ".class");
-        file.delete();
-    }
 
 }
