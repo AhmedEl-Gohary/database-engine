@@ -1,8 +1,10 @@
 package com.db;
 
+
 import com.btree.BTree;
 
 import java.io.Serializable;
+import java.util.Random;
 import java.util.Vector;
 
 public class Index<TKey extends Comparable<TKey>> implements Serializable {
@@ -156,4 +158,5 @@ class Pair implements Serializable {
     public String toString() {
         return cmpClusteringKey + " " + strPageName;
     }
+
 }

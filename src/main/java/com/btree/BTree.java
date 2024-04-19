@@ -1,5 +1,8 @@
 package com.btree;
 
+
+import java.util.Vector;
+
 /**
  * A B+ tree
  * Since the structures and behaviors between internal node and external node are different,
@@ -64,7 +67,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
      * Search the leaf node which should contain the specified key
      */
     @SuppressWarnings("unchecked")
-    private BTreeLeafNode<TKey, TValue> findLeafNodeShouldContainKey(TKey key) {
+    public BTreeLeafNode<TKey, TValue> findLeafNodeShouldContainKey(TKey key) {
         BTreeNode<TKey> node = this.root;
         while (node.getNodeType() == TreeNodeType.InnerNode) {
             node = ((BTreeInnerNode<TKey>)node).getChild( node.search(key) );
@@ -72,7 +75,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
 
         return (BTreeLeafNode<TKey, TValue>)node;
     }
-    private BTreeLeafNode<TKey,TValue> findMinInTree(){
+    public TValue findMinInTree(){
 
         BTreeNode<TKey> node = this.root;
         while (true) {
@@ -81,9 +84,9 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
             else break;
         }
 
-        return (BTreeLeafNode<TKey, TValue>)node;
+        return ((BTreeLeafNode<TKey,TValue>)node).getFirstValue();
     }
-    private BTreeLeafNode<TKey,TValue> findMaxInTree(){
+    public TValue findMaxInTree(){
         BTreeNode<TKey> node = this.root;
         while (true) {
             if(node instanceof BTreeInnerNode<TKey>)
@@ -91,7 +94,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
             else break;
         }
 
-        return (BTreeLeafNode<TKey, TValue>)node;
+        return ((BTreeLeafNode<TKey,TValue>)node).getLastValue();
     }
 
     static class Tuple implements java.io.Serializable {

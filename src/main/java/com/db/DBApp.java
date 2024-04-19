@@ -266,7 +266,7 @@ public class DBApp {
         return filteredResults;
     }
 
-    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index, Table tableInstance) {
+    private Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index, Table tableInstance) throws DBAppException {
         if (sqlTerm._strOperator.equals("=")) {
             return binarySearchIndex(sqlTerm, tableInstance);
         }

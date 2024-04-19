@@ -10,6 +10,14 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
         this.keys = new Object[LEAFORDER + 1];
         this.values = new Object[LEAFORDER + 1];
     }
+    public TValue getFirstValue(){
+        return (TValue) values[0];
+    }
+    public TValue getLastValue(){
+        int i = 0;
+        while(i<values.length && values[i]!=null)i++;
+        return (TValue) values[i-1];
+    }
 
     @SuppressWarnings("unchecked")
     public TValue getValue(int index) {
