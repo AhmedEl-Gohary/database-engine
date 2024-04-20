@@ -3,14 +3,31 @@ package com.db;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
+/**
+ * A utility class for processing SQL queries.
+ */
+
 
 public final class QueryProcessor {
+    /**
+     * Gets the precedence of the specified logical operator.
+     *
+     * @param operator The logical operator.
+     * @return The precedence value.
+     */
 
     public static int getPrecedence(String operator) {
         if (operator.equals("AND")) return 2;
         if (operator.equals("XOR")) return 1;
         return 0;
     }
+    /**
+     * Applies the SQL term condition to filter entries from the table.
+     *
+     * @param sqlTerm The SQL term representing the condition.
+     * @return A vector of filtered entries.
+     * @throws DBAppException if an error occurs during query processing.
+     */
 
     public static Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
         Table tableInstance = (Table) DBApp.deserialize(sqlTerm._strTableName);
@@ -24,6 +41,14 @@ public final class QueryProcessor {
         }
 
     }
+    /**
+     * Performs index-based queries based on the SQL term condition.
+     *
+     * @param sqlTerm The SQL term representing the condition.
+     * @param index The index to query.
+     * @return A vector of filtered entries.
+     * @throws DBAppException if an error occurs during query processing.
+     */
 
     public static Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index) throws DBAppException {
         if (sqlTerm._strOperator.equals("=")) {
@@ -43,6 +68,12 @@ public final class QueryProcessor {
         }
         throw new DBAppException("Invalid Operator!");
     }
+    /**
+     * Inserts entries from pages to a result set based on index search results.
+     *
+     * @param vecPages The vector of pages to insert from.
+     * @return A vector of inserted entries.
+     */
 
     public static Vector<Entry> insertFromPagesToEntries(Vector<Pair> vecPages) {
         Vector<Entry> resultSet = new Vector<>();
@@ -56,6 +87,14 @@ public final class QueryProcessor {
         return resultSet;
     }
 
+    /**
+     * Performs clustering queries based on the SQL term condition.
+     *
+     * @param sqlTerm The SQL term representing the condition.
+     * @param tableInstance The table instance to query.
+     * @return A vector of filtered entries.
+     * @throws DBAppException if an error occurs during query processing.
+     */
 
     public static Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         if (sqlTerm._strOperator.equals("=")) {
@@ -69,6 +108,14 @@ public final class QueryProcessor {
         }
         throw new DBAppException("Invalid Operator!");
     }
+/**
+ * Performs linear scanning to filter entries based on the SQL term condition.
+ *
+ * @param sqlTerm The SQL term representing the condition.
+ * @param tableInstance The table instance to scan.
+ * @return A vector of filtered entries.
+ * @throws DBAppException if an error occurs during query processing.
+*/
 
     public static Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
@@ -86,6 +133,14 @@ public final class QueryProcessor {
         return filteredResults;
     }
 
+    /**
+     * Performs a binary search for entries with a specific clustering key value in a table.
+     * @param sqlTerm The SQL term containing the clustering key value.
+     * @param tableInstance The instance of the table to search in.
+     * @return A vector containing the entries with the specified clustering key value, or an empty vector if not found.
+     */
+
+
     public static Vector<Entry> binarySearchClustering(SQLTerm sqlTerm, Table tableInstance) {
         int iPageIndex = binarySearchPageLocation((Comparable) sqlTerm._objValue, tableInstance);
         if (iPageIndex == -1) return new Vector<Entry>();
@@ -98,7 +153,13 @@ public final class QueryProcessor {
         }
         return vecEntries;
     }
-
+    /**l
+     * Searches for the index of an entry within a vector of entries using binary search.
+     *
+     * @param entries The vector of entries to search.
+     * @param id The ID of the entry to search for.
+     * @return The index of the entry if found, otherwise -1.
+     */
     public static int binarySearchIndexOfEntry(Vector<Entry> entries, Comparable id) {
         int N = entries.size();
         int l = 0, r = N - 1;
@@ -115,7 +176,13 @@ public final class QueryProcessor {
         }
         return -1;
     }
-
+    /**
+     * Searches for the page location using binary search.
+     *
+     * @param oTarget The target value.
+     * @param tableInstance The table instance.
+     * @return The index of the page location.
+     */
     public static int binarySearchPageLocation(Comparable oTarget, Table tableInstance){
         int N = tableInstance.vecPages.size();
         int l = 0, r = N - 1;
@@ -131,7 +198,14 @@ public final class QueryProcessor {
         }
         return location;
     }
-
+    /**
+     * Scans from the end of the table to filter entries based on the SQL term condition.
+     *
+     * @param sqlTerm The SQL term representing the condition.
+     * @param tableInstance The table instance to scan.
+     * @return A vector of filtered entries.
+     * @throws DBAppException if an error occurs during query processing.
+     */
     public static Vector<Entry> scanFromTheEnd(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
         for (int i = tableInstance.vecPages.size() - 1; i >= 0; i--) {
@@ -150,6 +224,15 @@ public final class QueryProcessor {
         return filteredResults;
     }
 
+    /**
+     * Scans from the beginning of the table to filter entries based on the SQL term condition.
+     *
+     * @param sqlTerm The SQL term representing the condition.
+     * @param tableInstance The table instance to scan.
+     * @return A vector of filtered entries.
+     * @throws DBAppException if an error occurs during query processing.
+     */
+
     public static Vector<Entry> scanFromTheBeginning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
         for (String strPageName : tableInstance.vecPages) {
@@ -166,6 +249,15 @@ public final class QueryProcessor {
         }
         return filteredResults;
     }
+    /**
+     * Evaluates a condition between a column value and a given value.
+     *
+     * @param columnValue The column value.
+     * @param operator The comparison operator.
+     * @param value The value to compare against.
+     * @return true if the condition is satisfied, false otherwise.
+     */
+
 
     public static boolean evaluateCondition(Object columnValue, String operator, Object value) {
         switch (operator) {
@@ -184,6 +276,15 @@ public final class QueryProcessor {
         }
         return false;
     }
+    /**
+     * Combines two result sets using the specified operator.
+     *
+     * @param results1 The first result set.
+     * @param results2 The second result set.
+     * @param operator The logical operator.
+     * @return A vector of combined entries.
+     * @throws DBAppException if an error occurs during result set combination.
+     */
 
     public static Vector<Entry> combineResults(Vector<Entry> results1, Vector<Entry> results2, String operator) throws DBAppException {
         if (operator.equals("AND")) {
