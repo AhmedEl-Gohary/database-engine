@@ -200,8 +200,6 @@ public class DBApp {
     }
 
     public static void main( String[] args ) throws DBAppException {
-
-
         String strTableName = "Student";
         Hashtable htblColNameType = new Hashtable( );
         htblColNameType.put("id", "java.lang.Integer");
@@ -209,27 +207,6 @@ public class DBApp {
         htblColNameType.put("gpa", "java.lang.Double");
         try {
             DBApp dbApp = new DBApp();
-//            dbApp.createTable(strTableName,"id",htblColNameType);
-//            HashSet<Integer> hs = new HashSet<>();
-//            Hashtable<String,Object> ht = new Hashtable<>();
-//            ht.put("name", "ahmed");
-//            ht.put("id", 3);
-//            ht.put("gpa", 2);
-//            dbApp.insertIntoTable(strTableName, ht);
-//            ht.clear();
-//            ht.put("name", "yasser");
-//            ht.put("id", 1);
-//            ht.put("gpa", 1);
-//            dbApp.insertIntoTable(strTableName, ht);
-//            ht.clear();
-//            ht.put("name", "tawfik");
-//            ht.put("id", 2);
-//            ht.put("gpa", 3);
-//            dbApp.insertIntoTable(strTableName, ht);
-//            ht.clear();
-//            dbApp.createIndex(table.strTableName, "name", "test" );
-// ahmed was here
-
             System.out.println();
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
@@ -238,145 +215,32 @@ public class DBApp {
             ht.put("id", new Integer(1));
             ht.put("gpa", new Double(0.9));
             dbApp.insertIntoTable(strTableName, ht);
-            ht.put("name", new String("yasser"));
-            ht.put("id", new Integer(2));
-            ht.put("gpa", new Double(2));
-            dbApp.insertIntoTable(strTableName, ht);
 
             ht.put("name", "tawfik");
             ht.put("id", new Integer(3));
             ht.put("gpa", new Double(3));
             dbApp.insertIntoTable(strTableName, ht);
-
-//            ht.put("name", "abdelwahab");
-//            ht.put("id", 4);
-//            ht.put("gpa", 4);
-//            dbApp.insertIntoTable(strTableName, ht);
-//
-//            ht.put("name", "gohary");
-//            ht.put("id", 5);
-//            ht.put("gpa", 5);
-//            dbApp.insertIntoTable(strTableName, ht);
-//
-//            ht.put("name", "hassan");
-//            ht.put("id", 6);
-//            ht.put("gpa", 6);
-//            dbApp.insertIntoTable(strTableName, ht);
-//
-//            ht.put("name", "elbakly");
-//            ht.put("id", 7);
-//            ht.put("gpa", 6);
-//            dbApp.insertIntoTable(strTableName, ht);
-//
-//            System.out.println(table);
-//
-            dbApp.createIndex(strTableName ,"gpa","7amada");
             Table table = (Table) deserialize(strTableName);
+            table= (Table) deserialize(strTableName);
+            System.out.println(table);
+            dbApp.createIndex(strTableName,"id","Goahry");
+            ht.put("name", new String("yasser"));
+            ht.put("id", new Integer(4));
+            ht.put("gpa", new Double(2));
+            dbApp.insertIntoTable(strTableName, ht);
+            table= (Table) deserialize(strTableName);
             System.out.println(table);
             ht.remove("id");
-//            ht.put("id", new Integer(1));
-            dbApp.updateTable(strTableName, "1", ht);
+            ht.put("gpa",0.1);
+            dbApp.updateTable(strTableName,"4",ht);
             table= (Table) deserialize(strTableName);
-
             System.out.println(table);
-            ht.put("gpa", new Double(0.9));
-            dbApp.updateTable(strTableName, "2", ht);
-            table= (Table) deserialize(strTableName);
-
-            System.out.println(table);
-            dbApp.updateTable(strTableName, "3", ht);
-            table= (Table) deserialize(strTableName);
-
-            System.out.println(table);
-
-//            SQLTerm[] arr = new SQLTerm[1];
-//            arr[0] = new SQLTerm();
-//            arr[0]._strColumnName = "name";
-//            arr[0]._strOperator = "<";
-//            arr[0]._strTableName = "Student";
-//            arr[0]._objValue = "g";
-//
-//            dbApp.createIndex(strTableName, "name", "aaL");
-//            Meta.showIndexData("aaL");
-//
-//
-//            System.out.println(dbApp.applyCondition(arr[0]));
-//            removeTable(strTableName);
-
         } catch (Throwable e) {
-//            removeTable(strTableName);
-//            System.out.println(e.getStackTrace());
             e.printStackTrace();
         }finally {
             removeTable(strTableName);
         }
-
-
-//        try{
-//            String strTableName = "Student";
-//            DBApp	dbApp = new DBApp( );
-//
-//            Hashtable htblColNameType = new Hashtable( );
-//            htblColNameType.put("id", "java.lang.Integer");
-//            htblColNameType.put("name", "java.lang.String");
-//            htblColNameType.put("gpa", "java.lang.double");
-//            dbApp.createTable( strTableName, "id", htblColNameType );
-//            dbApp.createIndex( strTableName, "gpa", "gpaIndex" );
-//
-//            Hashtable htblColNameValue = new Hashtable( );
-//            htblColNameValue.put("id", 2343432);
-//            htblColNameValue.put("name", "Ahmed Noor");
-//            htblColNameValue.put("gpa", 0.95);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 453455);
-//            htblColNameValue.put("name", "Ahmed Noor");
-//            htblColNameValue.put("gpa", 0.95);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 5674567);
-//            htblColNameValue.put("name", "Dalia Noor");
-//            htblColNameValue.put("gpa", 1.25);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 23498);
-//            htblColNameValue.put("name", "John Noor");
-//            htblColNameValue.put("gpa", 1.5);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//            htblColNameValue.clear( );
-//            htblColNameValue.put("id", 78452);
-//            htblColNameValue.put("name", "Zaky Noor");
-//            htblColNameValue.put("gpa", 0.88);
-//            dbApp.insertIntoTable( strTableName , htblColNameValue );
-//
-//
-//            SQLTerm[] arrSQLTerms;
-//            arrSQLTerms = new SQLTerm[2];
-//            arrSQLTerms[0]._strTableName =  "Student";
-//            arrSQLTerms[0]._strColumnName=  "name";
-//            arrSQLTerms[0]._strOperator  =  "=";
-//            arrSQLTerms[0]._objValue     =  "John Noor";
-//
-//            arrSQLTerms[1]._strTableName =  "Student";
-//            arrSQLTerms[1]._strColumnName=  "gpa";
-//            arrSQLTerms[1]._strOperator  =  "=";
-//            arrSQLTerms[1]._objValue     =  1.5;
-//
-//            String[]strarrOperators = new String[1];
-//            strarrOperators[0] = "OR";
-//            // select * from Student where name = "John Noor" or gpa = 1.5;
-//            Iterator resultSet = dbApp.selectFromTable(arrSQLTerms , strarrOperators);
-//        }
-//        catch(Exception | DBAppException exp){
-//            exp.printStackTrace( );
-//        }
     }
-
-
     public static void serialize(Serializable serObj, String strObjectName){
         try {
             FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
