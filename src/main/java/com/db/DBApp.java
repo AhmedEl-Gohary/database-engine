@@ -103,7 +103,7 @@ public class DBApp {
         if (!Meta.checkTableColumnsNull(strTableName, htblColNameValue))
             throw new DBAppException("Missing Columns Values");
         Table tableInstance = (Table) deserialize(strTableName);
-        tableInstance.fnInsertEntry(htblColNameValue);
+        tableInstance.insertEntry(htblColNameValue);
         serialize(tableInstance, strTableName);
     }
 
@@ -129,7 +129,7 @@ public class DBApp {
         Table tableInstance = (Table) deserialize(strTableName);
         Hashtable<String, Object> htblEntryKey = new Hashtable<>();
         htblEntryKey.put(strClusteringKeyName, objClusteringKeyValue);
-        tableInstance.fnUpdateEntry(htblEntryKey,htblColNameValue);
+        tableInstance.updateEntry(htblEntryKey,htblColNameValue);
 
         // index part
 
@@ -166,7 +166,7 @@ public class DBApp {
         Table tableInstance = (Table) deserialize(strTableName);
         String strClusteringKeyName = Meta.getTableClusteringKey(strTableName);
         if(htblColNameValue.containsKey(strClusteringKeyName)){
-            Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
+            Entry entryInstance = tableInstance.searchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
             if (entryInstance != null && entryInstance.equals(htblColNameValue))vecResults.add(entryInstance);
         }
         else{
@@ -186,7 +186,7 @@ public class DBApp {
                 Index indexInstance = (Index) deserialize(vecOfPairs.get(0).strIndexName);
                 Vector<Pair> vecOfSubResults = indexInstance.search((Comparable)htblColNameValue.get(vecOfPairs.get(0).strColumnName));
                 for(Pair pair:vecOfSubResults) {
-                    Entry entry = tableInstance.fnSearchInPageWithClusteringKey(pair);
+                    Entry entry = tableInstance.searchInPageWithClusteringKey(pair);
                     if (entry.equals(htblColNameValue)) {
                         vecResults.add(entry);
                     }
@@ -201,7 +201,7 @@ public class DBApp {
             serialize(indexInstance,pair.strIndexName);
         }
         for(Entry entry: vecResults) {
-            tableInstance.fnDeleteEntry(entry);
+            tableInstance.deleteEntry(entry);
         }
         serialize(tableInstance, strTableName);
     }

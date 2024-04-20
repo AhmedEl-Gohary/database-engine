@@ -43,7 +43,7 @@ public class Table implements Serializable{
      *
      * @param htblColNameValue The hashtable containing column names and values.
      */
-    public void fnInsertNewPage(Hashtable<String, Object> htblColNameValue){
+    public void insertNewPage(Hashtable<String, Object> htblColNameValue){
         iCreatedPages++;
         vecPages.add(this.strTableName + iCreatedPages);
         vecMin.add((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
@@ -57,11 +57,11 @@ public class Table implements Serializable{
      * @param htblColNameValue The hashtable containing column names and values of the entry.
      * @throws DBAppException if an error occurs during insertion.
      */
-    public void fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public void insertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
         if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
-        int iPageNumber = fnGetPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
+        int iPageNumber = getPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         if (iPageNumber == - 1) iPageNumber = 0;
         Entry entryInstance = new Entry(htblColNameValue, this.strClusteringKeyColumn);
         Hashtable<String, String> colIndicesNames = Meta.mapColumnToIndexName(strTableName);
@@ -71,7 +71,7 @@ public class Table implements Serializable{
         }
         while(entryInstance != null) {
             if (iPageNumber == vecPages.size()) {
-                fnInsertNewPage(htblColNameValue);
+                insertNewPage(htblColNameValue);
             }
             Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
             for (String colName: colIndices.keySet()){
@@ -100,12 +100,12 @@ public class Table implements Serializable{
      * @return The entry matching the specified clustering key, or null if not found.
      * @throws DBAppException if an error occurs during search.
      */
-    public Entry fnSearchEntryWithClusteringKey(Hashtable<String,Object> htblColNameValue,String strClusteringKeyColumn) throws DBAppException {
+    public Entry searchEntryWithClusteringKey(Hashtable<String,Object> htblColNameValue, String strClusteringKeyColumn) throws DBAppException {
         if (htblColNameValue.get(strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
         Comparable cmpClusteringKey = (Comparable) htblColNameValue.get(strClusteringKeyColumn);
-        int iPageNumber = fnGetPageLocation(cmpClusteringKey);
+        int iPageNumber = getPageLocation(cmpClusteringKey);
         if (iPageNumber == -1) iPageNumber = 0;
         Page pageBlock = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
@@ -124,7 +124,7 @@ public class Table implements Serializable{
      * @return The entry matching the specified clustering key, or null if not found.
      * @throws DBAppException if an error occurs during search.
      */
-    public Entry fnSearchInPageWithClusteringKey(String strPageName,Hashtable<String,Object> htblColNameValue) throws DBAppException {
+    public Entry searchInPageWithClusteringKey(String strPageName, Hashtable<String,Object> htblColNameValue) throws DBAppException {
         if (htblColNameValue.get(strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
@@ -144,34 +144,18 @@ public class Table implements Serializable{
      * @return The entry matching the specified clustering key, or null if not found.
      * @throws DBAppException if an error occurs during search.
      */
-    public Entry fnSearchInPageWithClusteringKey(Pair pair) throws DBAppException {
+    public Entry searchInPageWithClusteringKey(Pair pair) throws DBAppException {
         Hashtable<String,Object> htblColNameValue = new Hashtable<>();
         htblColNameValue.put(strClusteringKeyColumn,pair.getCmpClusteringKey());
-        return fnSearchInPageWithClusteringKey(pair.getStrPageName(),htblColNameValue);
+        return searchInPageWithClusteringKey(pair.getStrPageName(),htblColNameValue);
     }
-
-
-//    public void fnDeleteEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
-//        if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
-//            throw new DBAppException("Clustering Key cannot be null!");
-//        }
-//        int iPageNumber = fnGetPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
-//        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
-//        Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
-//        int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
-//        if (iEntryIdx >= 0){
-//            pageBlock.vecTuples.remove(iEntryIdx);
-//
-//        }
-//        //TODO: delete empty pages
-//    }
 
     /**
      * Counts the number of pages in the table.
      *
      * @return The number of pages in the table.
      */
-    public int fnCountPages(){
+    public int countPages(){
         return vecPages.size();
     }
 
@@ -182,25 +166,9 @@ public class Table implements Serializable{
      * @param iPageIdx The index of the page to check.
      * @return true if the page is full; false otherwise.
      */
-    private boolean fnIsFull(int iPageIdx){
+    private boolean isFull(int iPageIdx){
         return vecCountRows.get(iPageIdx) == Page.iMaxRowsCount;
     }
-
-//    public int fnGetPageLocation(Comparable oTarget){
-//        int N = vecPages.size();
-//        int l = 0, r = N - 1;
-//        int iFirstGoodIdx = 0;
-//        while (l <= r) {
-//            int mid = l + r >> 1;
-//            if (oTarget.compareTo(vecMin.get(mid)) >= 0) {
-//                iFirstGoodIdx = mid;
-//                r = mid - 1;
-//            } else {
-//                l = mid + 1;
-//            }
-//        }
-//        return iFirstGoodIdx;
-//    }
 
     /**
      * Gets the location of a target on a page.
@@ -208,7 +176,7 @@ public class Table implements Serializable{
      * @param oTarget The target object to locate.
      * @return The location index of the target.
      */
-    public int fnGetPageLocation(Comparable oTarget){
+    public int getPageLocation(Comparable oTarget){
         int N = vecPages.size();
         int l = 0, r = N - 1;
         int iFirstGoodIdx = -1;
@@ -229,8 +197,8 @@ public class Table implements Serializable{
      *
      * @param entry The entry to delete.
      */
-    public void fnDeleteEntry(Entry entry){
-        int iPageNumber = fnGetPageLocation(entry.fnEntryID());
+    public void deleteEntry(Entry entry){
+        int iPageNumber = getPageLocation(entry.fnEntryID());
         Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entry);
         if (iEntryIdx >= 0){
@@ -254,9 +222,9 @@ public class Table implements Serializable{
      * @param oTarget The target object.
      * @return The page name containing the target, or null if not found.
      */
-    public String fnGetKeyPage(Comparable oTarget){
+    public String getKeyPage(Comparable oTarget){
         if (isEmpty()) return null;
-        int iPageNumber = fnGetPageLocation(oTarget);
+        int iPageNumber = getPageLocation(oTarget);
         if (iPageNumber == -1) iPageNumber = 0;
         return vecPages.get(iPageNumber);
     }
@@ -268,18 +236,18 @@ public class Table implements Serializable{
      * @throws DBAppException if an error occurs during update.
      */
 
-    public void fnUpdateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue) throws DBAppException {
+    public void updateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue) throws DBAppException {
         if(this.isEmpty()){
             return;
         }
-        int iPageNumber = fnGetPageLocation((Comparable) htblEntryKey.get(this.strClusteringKeyColumn));
+        int iPageNumber = getPageLocation((Comparable) htblEntryKey.get(this.strClusteringKeyColumn));
         if (iPageNumber == -1) return;
         Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entrySearch = new Entry(htblEntryKey,this.strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entrySearch );
         if(iEntryIdx >=0){
             Entry entryFetch =  pageInstance.vecTuples.get(iEntryIdx);
-            this.fnUpdateTableIndecies(entryFetch ,htblColNameValue);
+            this.updateTableIndices(entryFetch ,htblColNameValue);
             entryFetch.setHtblTuple(htblColNameValue);
         }
         DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
@@ -291,7 +259,7 @@ public class Table implements Serializable{
      * @param htblColNameValue The hashtable containing updated column values.
      * @throws DBAppException if an error occurs during index update.
      */
-    public void fnUpdateTableIndecies(Entry e ,Hashtable<String, Object> htblColNameValue) throws DBAppException {
+    public void updateTableIndices(Entry e , Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
         for(String strColName: htblColNameValue.keySet()){
             if(Meta.haveColumnIndex(this.strTableName, strColName)){
