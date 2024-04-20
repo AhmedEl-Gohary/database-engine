@@ -417,6 +417,8 @@ public class DBApp {
 
 
     public static void main( String[] args ) throws DBAppException {
+
+
         String strTableName = "Student";
         Hashtable htblColNameType = new Hashtable( );
         htblColNameType.put("id", "java.lang.Integer");
@@ -424,58 +426,82 @@ public class DBApp {
         htblColNameType.put("gpa", "java.lang.Double");
         try {
             DBApp dbApp = new DBApp();
+//            dbApp.createTable(strTableName,"id",htblColNameType);
+//            HashSet<Integer> hs = new HashSet<>();
+//            Hashtable<String,Object> ht = new Hashtable<>();
+//            ht.put("name", "ahmed");
+//            ht.put("id", 3);
+//            ht.put("gpa", 2);
+//            dbApp.insertIntoTable(strTableName, ht);
+//            ht.clear();
+//            ht.put("name", "yasser");
+//            ht.put("id", 1);
+//            ht.put("gpa", 1);
+//            dbApp.insertIntoTable(strTableName, ht);
+//            ht.clear();
+//            ht.put("name", "tawfik");
+//            ht.put("id", 2);
+//            ht.put("gpa", 3);
+//            dbApp.insertIntoTable(strTableName, ht);
+//            ht.clear();
+//            dbApp.createIndex(table.strTableName, "name", "test" );
+// ahmed was here
+
+            System.out.println();
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
             Hashtable<String,Object> ht = new Hashtable<>();
             ht.put("name", "ahmed");
-            ht.put("id", 3);
-            ht.put("gpa", 2);
-            dbApp.insertIntoTable(strTableName, ht);
-
-            ht.put("name", "yasser");
             ht.put("id", 1);
             ht.put("gpa", 1);
             dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", "yasser");
+            ht.put("id", 2);
+            ht.put("gpa", 2);
+            dbApp.insertIntoTable(strTableName, ht);
 
             ht.put("name", "tawfik");
-            ht.put("id", 2);
+            ht.put("id", 3);
             ht.put("gpa", 3);
             dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "abdelwahab");
+            ht.put("id", 4);
+            ht.put("gpa", 4);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "gohary");
+            ht.put("id", 5);
+            ht.put("gpa", 5);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "hassan");
+            ht.put("id", 6);
+            ht.put("gpa", 6);
+            dbApp.insertIntoTable(strTableName, ht);
+
+            ht.put("name", "elbakly");
+            ht.put("id", 7);
+            ht.put("gpa", 6);
+            dbApp.insertIntoTable(strTableName, ht);
+
             Table table = (Table) fnDeserialize(strTableName);
+            System.out.println(table);
+            SQLTerm[] arr = new SQLTerm[1];
+            arr[0] = new SQLTerm();
+            arr[0]._strColumnName = "name";
+            arr[0]._strOperator = "<";
+            arr[0]._strTableName = "Student";
+            arr[0]._objValue = "g";
 
-//            ht.remove("id");
-//            ht.put("gpa", 0.7);
-//            String strIdxName = "Index";
-//            dbApp.createIndex(strTableName, "name", strIdxName);
-//            Index<String> index = (Index<String>) fnDeserialize(strIdxName);
-//            System.out.println(index.search("yasser"));
-//            removeTable(strTableName);
-
-
-//            SQLTerm[] arr = new SQLTerm[1];
-//            arr[0] = new SQLTerm();
-//            arr[0]._strColumnName = "gpa";
-//            arr[0]._strOperator = "<=";
-//            arr[0]._strTableName = "Student";
-//            arr[0]._objValue = 2;
-//
-//            Vector<Entry> vec = dbApp.applyCondition(arr[0]);
+            dbApp.createIndex(strTableName, "name", "aaL");
 
 
-//            int x;
+            System.out.println(dbApp.applyCondition(arr[0]));
+            removeTable(strTableName);
 
-
-//            Table tableInstance = (Table) fnDeserialize("Student");
-//            for(int i = 0; i < tableInstance.fnCountPages(); i++){
-//                System.out.println("cnt : " + tableInstance.vecCountRows.get(i));
-//                System.out.println("min: " +  tableInstance.vecMin.get(i));
-//                String page = tableInstance.vecPages.get(i);
-//                Page pageInstance = (Page)fnDeserialize(page);
-//                System.out.println(pageInstance);
-//            }
-//            removeTable("Student");
-
-        } catch (DBAppException e) {
+        } catch (Throwable e) {
+            removeTable(strTableName);
             System.out.println(e.getMessage());
         }
 
@@ -543,7 +569,6 @@ public class DBApp {
 //            exp.printStackTrace( );
 //        }
     }
-
 
 
     public static void fnSerialize(Serializable serObj, String strObjectName){

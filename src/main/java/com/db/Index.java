@@ -82,8 +82,7 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         l:while(treeNode != null ){
             for(int i=treeNode.getKeyCount()-1; i > -1; i--) {
                 if(treeNode.getKey(i).compareTo(key)>0){
-                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
-                        ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                    ans.addAll(treeNode.getValue(i));
                 }
                 else break l;
             }
@@ -99,8 +98,7 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         l:while(treeNode != null ){
             for(int i=treeNode.getKeyCount()-1;i>-1;i--){
                 if(treeNode.getKey(i).compareTo(key)>=0){
-                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
-                        ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                    ans.addAll(treeNode.getValue(i));
                 }
                 else break l;
             }
@@ -112,12 +110,11 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     public Vector<Pair> findLessThanKey(TKey key){
         Vector<Pair> ans =new Vector<>();
 
-        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
+        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMinInTreeNode();
         l:while(treeNode != null ){
             for(int i=0;i<treeNode.getKeyCount();i++){
                 if(treeNode.getKey(i).compareTo(key)<0){
-                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
-                        ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                    ans.addAll(treeNode.getValue(i));
                 }
                 else break l;
             }
@@ -129,12 +126,11 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     public Vector<Pair> findLessThanOrEqualKey(TKey key){
         Vector<Pair> ans =new Vector<>();
 
-        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMaxInTreeNode();
+        BTreeLeafNode<TKey,Vector<Pair>> treeNode = btree.findMinInTreeNode();
         l:while(treeNode != null ){
             for(int i=0;i<treeNode.getKeyCount();i++){
                 if(treeNode.getKey(i).compareTo(key)<=0){
-                    if (treeNode instanceof BTreeLeafNode<TKey,Vector<Pair>>)
-                    ans.addAll(((BTreeLeafNode<TKey,Vector<Pair>>) treeNode).getValue(i));
+                    ans.addAll(treeNode.getValue(i));
                 }
                 else break l;
             }
