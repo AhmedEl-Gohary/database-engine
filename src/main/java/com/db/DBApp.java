@@ -243,6 +243,7 @@ public class DBApp {
             ht.put("name" , "yasser");
             dbApp.deleteFromTable(strTableName ,ht);
             table= (Table) deserialize(strTableName);
+            System.out.println(table);
             ht.put("name", new String("alii"));
             ht.put("id", new Integer(7));
             ht.put("gpa", new Double(2));
@@ -251,9 +252,26 @@ public class DBApp {
             ht.put("id", new Integer(6));
             ht.put("gpa", new Double(2));
             dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", new String("aliii"));
+            ht.put("id", new Integer(0));
+            ht.put("gpa", new Double(2));
+            dbApp.insertIntoTable(strTableName, ht);
+
             table= (Table) deserialize(strTableName);
 
+            ht.remove("name");
+            ht.remove("gpa");
+            ht.put("id",7);
+            dbApp.deleteFromTable(strTableName ,ht);
+            table= (Table) deserialize(strTableName);
             System.out.println(table);
+            ht.put("id" , 0);
+            dbApp.deleteFromTable(strTableName ,ht);
+            ht.put("id" , 2);
+            dbApp.deleteFromTable(strTableName ,ht);
+            table= (Table) deserialize(strTableName);
+            System.out.println(table);
+
 
         } catch (Throwable e) {
             e.printStackTrace();

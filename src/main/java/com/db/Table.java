@@ -72,10 +72,7 @@ public class Table implements Serializable{
         }
         Comparable cmpClusteringKey = (Comparable) htblColNameValue.get(strClusteringKeyColumn);
         int iPageNumber = fnGetPageLocation(cmpClusteringKey);
-<<<<<<< HEAD
-=======
         if (iPageNumber == -1) iPageNumber = 0;
->>>>>>> 1fea47d0f4b489e253ccc6e90f2f0c6ec29d06ef
         Page pageBlock = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
