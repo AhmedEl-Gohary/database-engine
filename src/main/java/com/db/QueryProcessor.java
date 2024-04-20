@@ -15,12 +15,12 @@ public final class QueryProcessor {
      * @param operator The logical operator.
      * @return The precedence value.
      */
-
     public static int getPrecedence(String operator) {
         if (operator.equals("AND")) return 2;
         if (operator.equals("XOR")) return 1;
         return 0;
     }
+
     /**
      * Applies the SQL term condition to filter entries from the table.
      *
@@ -28,7 +28,6 @@ public final class QueryProcessor {
      * @return A vector of filtered entries.
      * @throws DBAppException if an error occurs during query processing.
      */
-
     public static Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
         Table tableInstance = (Table) DBApp.deserialize(sqlTerm._strTableName);
         if (!sqlTerm._strOperator.equals("!=") && sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
@@ -41,6 +40,7 @@ public final class QueryProcessor {
         }
 
     }
+
     /**
      * Performs index-based queries based on the SQL term condition.
      *
@@ -49,7 +49,6 @@ public final class QueryProcessor {
      * @return A vector of filtered entries.
      * @throws DBAppException if an error occurs during query processing.
      */
-
     public static Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index) throws DBAppException {
         if (sqlTerm._strOperator.equals("=")) {
             return insertFromPagesToEntries(index.search((Comparable) sqlTerm._objValue));
@@ -68,13 +67,13 @@ public final class QueryProcessor {
         }
         throw new DBAppException("Invalid Operator!");
     }
+
     /**
      * Inserts entries from pages to a result set based on index search results.
      *
      * @param vecPages The vector of pages to insert from.
      * @return A vector of inserted entries.
      */
-
     public static Vector<Entry> insertFromPagesToEntries(Vector<Pair> vecPages) {
         Vector<Entry> resultSet = new Vector<>();
         for (Pair pair : vecPages) {
@@ -95,7 +94,6 @@ public final class QueryProcessor {
      * @return A vector of filtered entries.
      * @throws DBAppException if an error occurs during query processing.
      */
-
     public static Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         if (sqlTerm._strOperator.equals("=")) {
             return binarySearchClustering(sqlTerm, tableInstance);
@@ -108,15 +106,15 @@ public final class QueryProcessor {
         }
         throw new DBAppException("Invalid Operator!");
     }
-/**
- * Performs linear scanning to filter entries based on the SQL term condition.
- *
- * @param sqlTerm The SQL term representing the condition.
- * @param tableInstance The table instance to scan.
- * @return A vector of filtered entries.
- * @throws DBAppException if an error occurs during query processing.
-*/
 
+    /**
+     * Performs linear scanning to filter entries based on the SQL term condition.
+     *
+     * @param sqlTerm The SQL term representing the condition.
+     * @param tableInstance The table instance to scan.
+     * @return A vector of filtered entries.
+     * @throws DBAppException if an error occurs during query processing.
+    */
     public static Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
         for (String strPageName : tableInstance.vecPages) {
@@ -139,8 +137,6 @@ public final class QueryProcessor {
      * @param tableInstance The instance of the table to search in.
      * @return A vector containing the entries with the specified clustering key value, or an empty vector if not found.
      */
-
-
     public static Vector<Entry> binarySearchClustering(SQLTerm sqlTerm, Table tableInstance) {
         int iPageIndex = binarySearchPageLocation((Comparable) sqlTerm._objValue, tableInstance);
         if (iPageIndex == -1) return new Vector<Entry>();
@@ -153,7 +149,8 @@ public final class QueryProcessor {
         }
         return vecEntries;
     }
-    /**l
+
+    /**
      * Searches for the index of an entry within a vector of entries using binary search.
      *
      * @param entries The vector of entries to search.
@@ -176,6 +173,7 @@ public final class QueryProcessor {
         }
         return -1;
     }
+
     /**
      * Searches for the page location using binary search.
      *
@@ -198,6 +196,7 @@ public final class QueryProcessor {
         }
         return location;
     }
+
     /**
      * Scans from the end of the table to filter entries based on the SQL term condition.
      *
@@ -232,7 +231,6 @@ public final class QueryProcessor {
      * @return A vector of filtered entries.
      * @throws DBAppException if an error occurs during query processing.
      */
-
     public static Vector<Entry> scanFromTheBeginning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
         Vector<Entry> filteredResults = new Vector<>();
         for (String strPageName : tableInstance.vecPages) {
@@ -249,6 +247,7 @@ public final class QueryProcessor {
         }
         return filteredResults;
     }
+
     /**
      * Evaluates a condition between a column value and a given value.
      *
@@ -257,8 +256,6 @@ public final class QueryProcessor {
      * @param value The value to compare against.
      * @return true if the condition is satisfied, false otherwise.
      */
-
-
     public static boolean evaluateCondition(Object columnValue, String operator, Object value) {
         switch (operator) {
             case "=":
@@ -276,6 +273,7 @@ public final class QueryProcessor {
         }
         return false;
     }
+    
     /**
      * Combines two result sets using the specified operator.
      *
@@ -285,7 +283,6 @@ public final class QueryProcessor {
      * @return A vector of combined entries.
      * @throws DBAppException if an error occurs during result set combination.
      */
-
     public static Vector<Entry> combineResults(Vector<Entry> results1, Vector<Entry> results2, String operator) throws DBAppException {
         if (operator.equals("AND")) {
             results1.retainAll(results2);
