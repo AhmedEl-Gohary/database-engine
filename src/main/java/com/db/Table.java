@@ -1,3 +1,6 @@
+/**
+ * Represents a table in the database.
+ */
 package com.db;
 
 import java.io.*;
@@ -6,13 +9,27 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 public class Table implements Serializable{
+    /** The name of the table. */
     String strTableName;
+    /** The name of the clustering key column. */
     String strClusteringKeyColumn;
+    /** Vector storing the names of pages belonging to the table. */
     Vector<String> vecPages;
+    /** Vector storing the minimum values of each page's clustering key. */
     Vector<Comparable> vecMin;
+    /** Vector storing the count of rows in each page. */
     Vector<Integer> vecCountRows;
+    /** The number of created pages. */
     int iCreatedPages ;
 
+    /**
+     * Constructs a new Table object.
+     *
+     * @param strTableName The name of the table.
+     * @param strClusteringKeyColumn The name of the clustering key column.
+     * @param htblColNameType The hashtable mapping column names to their types.
+     * @throws DBAppException if an error occurs during table creation.
+     */
     public Table(String strTableName, String strClusteringKeyColumn, Hashtable<String, String> htblColNameType) throws DBAppException {
         vecPages = new Vector<>();
         vecMin = new Vector<>();
@@ -21,7 +38,11 @@ public class Table implements Serializable{
         this.strClusteringKeyColumn = strClusteringKeyColumn;
         this.iCreatedPages = 0;
     }
-
+    /**
+     * Inserts a new page into the table.
+     *
+     * @param htblColNameValue The hashtable containing column names and values.
+     */
     public void fnInsertNewPage(Hashtable<String, Object> htblColNameValue){
         iCreatedPages++;
         vecPages.add(this.strTableName + iCreatedPages);
@@ -30,7 +51,12 @@ public class Table implements Serializable{
         DBApp.serialize(pageInstance, strTableName + iCreatedPages);
         vecCountRows.add(0);
     }
-
+    /**
+     * Inserts an entry into the table.
+     *
+     * @param htblColNameValue The hashtable containing column names and values of the entry.
+     * @throws DBAppException if an error occurs during insertion.
+     */
     public void fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
         if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
@@ -66,6 +92,14 @@ public class Table implements Serializable{
         --iPageNumber;
         vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber) + 1);
     }
+    /**
+     * Searches for an entry with the specified clustering key in the table.
+     *
+     * @param htblColNameValue The hashtable containing column names and values.
+     * @param strClusteringKeyColumn The clustering key column name.
+     * @return The entry matching the specified clustering key, or null if not found.
+     * @throws DBAppException if an error occurs during search.
+     */
     public Entry fnSearchEntryWithClusteringKey(Hashtable<String,Object> htblColNameValue,String strClusteringKeyColumn) throws DBAppException {
         if (htblColNameValue.get(strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
@@ -82,6 +116,14 @@ public class Table implements Serializable{
         }
         return null;
     }
+    /**
+     * Searches for an entry with the specified clustering key in the specified page.
+     *
+     * @param strPageName The name of the page to search in.
+     * @param htblColNameValue The hashtable containing column names and values.
+     * @return The entry matching the specified clustering key, or null if not found.
+     * @throws DBAppException if an error occurs during search.
+     */
     public Entry fnSearchInPageWithClusteringKey(String strPageName,Hashtable<String,Object> htblColNameValue) throws DBAppException {
         if (htblColNameValue.get(strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
@@ -95,6 +137,13 @@ public class Table implements Serializable{
         }
         return null;
     }
+    /**
+     * Searches for an entry with the specified clustering key in the specified page.
+     *
+     * @param pair The pair containing the page name and clustering key.
+     * @return The entry matching the specified clustering key, or null if not found.
+     * @throws DBAppException if an error occurs during search.
+     */
     public Entry fnSearchInPageWithClusteringKey(Pair pair) throws DBAppException {
         Hashtable<String,Object> htblColNameValue = new Hashtable<>();
         htblColNameValue.put(strClusteringKeyColumn,pair.getCmpClusteringKey());
@@ -117,10 +166,22 @@ public class Table implements Serializable{
 //        //TODO: delete empty pages
 //    }
 
+    /**
+     * Counts the number of pages in the table.
+     *
+     * @return The number of pages in the table.
+     */
     public int fnCountPages(){
         return vecPages.size();
     }
 
+
+    /**
+     * Checks if a page is full.
+     *
+     * @param iPageIdx The index of the page to check.
+     * @return true if the page is full; false otherwise.
+     */
     private boolean fnIsFull(int iPageIdx){
         return vecCountRows.get(iPageIdx) == Page.iMaxRowsCount;
     }
@@ -141,6 +202,12 @@ public class Table implements Serializable{
 //        return iFirstGoodIdx;
 //    }
 
+    /**
+     * Gets the location of a target on a page.
+     *
+     * @param oTarget The target object to locate.
+     * @return The location index of the target.
+     */
     public int fnGetPageLocation(Comparable oTarget){
         int N = vecPages.size();
         int l = 0, r = N - 1;
@@ -157,6 +224,11 @@ public class Table implements Serializable{
         return iFirstGoodIdx;
     }
 
+    /**
+     * Deletes an entry from the table.
+     *
+     * @param entry The entry to delete.
+     */
     public void fnDeleteEntry(Entry entry){
         int iPageNumber = fnGetPageLocation(entry.fnEntryID());
         Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
@@ -176,12 +248,25 @@ public class Table implements Serializable{
         }
     }
 
+    /**
+     * Retrieves the page name containing a specific target.
+     *
+     * @param oTarget The target object.
+     * @return The page name containing the target, or null if not found.
+     */
     public String fnGetKeyPage(Comparable oTarget){
         if (isEmpty()) return null;
         int iPageNumber = fnGetPageLocation(oTarget);
         if (iPageNumber == -1) iPageNumber = 0;
         return vecPages.get(iPageNumber);
     }
+    /**
+     * Updates an entry in the table.
+     *
+     * @param htblEntryKey The hashtable containing the entry key.
+     * @param htblColNameValue The hashtable containing column names and updated values.
+     * @throws DBAppException if an error occurs during update.
+     */
 
     public void fnUpdateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue) throws DBAppException {
         if(this.isEmpty()){
@@ -199,7 +284,13 @@ public class Table implements Serializable{
         }
         DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
     }
-
+    /**
+     * Updates the table indices after an entry update.
+     *
+     * @param e The entry being updated.
+     * @param htblColNameValue The hashtable containing updated column values.
+     * @throws DBAppException if an error occurs during index update.
+     */
     public void fnUpdateTableIndecies(Entry e ,Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
         for(String strColName: htblColNameValue.keySet()){
@@ -214,7 +305,11 @@ public class Table implements Serializable{
         }
     }
 
-
+    /**
+     * Checks if the table is empty.
+     *
+     * @return true if the table is empty; false otherwise.
+     */
     public boolean isEmpty(){
         return vecMin.isEmpty();
     }
@@ -231,12 +326,20 @@ public class Table implements Serializable{
 
     }
 
+    /**
+     * Clears the table.
+     */
     public void clear(){
         vecPages.clear();
         vecMin.clear();
         vecCountRows.clear();
         iCreatedPages = 0;
     }
+    /**
+     * Returns a string representation of the table.
+     *
+     * @return A string representing the table.
+     */
     @Override
     public String toString(){
         StringBuilder st = new StringBuilder();
