@@ -3,6 +3,8 @@
 
 TinyDB is a lightweight, in-memory database engine designed for educational and demonstration purposes. It offers basic functionalities for managing data in tables and leverages B+ trees for efficient searching.
 
+---
+
 ### Features
 
 * **Table Creation:** Define table schemas with column names, data types, and a primary key (clustering column).
@@ -10,6 +12,8 @@ TinyDB is a lightweight, in-memory database engine designed for educational and 
 * **B+ Tree Indexing:** Create B+ tree indexes on specific table columns to enhance search performance.
 * **Index Utilization:** When applicable, TinyDB utilizes B+ tree indexes for efficient search queries.
 * **Basic Selection:** Perform selections on tables using a simplified subset of SQL terms (e.g., equality comparisons).
+
+---
 
 ### Note
 
@@ -19,7 +23,8 @@ TinyDB is a simplified engine and does not currently support:
 * **Joins:** Combining data from multiple tables based on conditions.
 * **Transactions:** Guaranteeing data consistency across multiple operations.
 * **Complex SQL Queries:** Supports only a limited subset of SQL terms (e.g., no JOINs, aggregations).
-* **Persistence:** Data resides in memory and is lost upon program termination.
+
+---
 
 ### Usage
 
