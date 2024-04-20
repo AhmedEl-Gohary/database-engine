@@ -112,7 +112,7 @@ strarrOperators[1] = "AND";
 System.out.println(dbApp.selectFromTable(arrSQLTerms,strarrOperators));
 ```
 
-equivelant to the following SQL statement
+is equivalent to the following SQL statement
 ```SQL
 SELECT * FROM Student WHERE gpa <= 4 OR (gpa <= 7 AND gpa >= 5);
 ```
