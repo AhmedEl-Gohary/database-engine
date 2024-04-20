@@ -61,7 +61,7 @@ public class Entry implements Serializable, Comparable<Entry>{
 
     public boolean equals(Hashtable<String, Object> htblColNameValue) {
         for(String strColName:htblColNameValue.keySet()) {
-            if (!getColumnValue(strColName).equals(htblColNameValue.get(strColName))) {
+            if ((htblColNameValue.containsKey(strColName)) && !getColumnValue(strColName).equals(htblColNameValue.get(strColName))) {
                 return false;
             }
         }
