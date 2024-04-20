@@ -35,7 +35,8 @@ public class Table implements Serializable{
         if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
-        int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
+        int iPageNumber = fnGetPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
+        if (iPageNumber == - 1) iPageNumber = 0;
         Entry entryInstance = new Entry(htblColNameValue, this.strClusteringKeyColumn);
         Hashtable<String, String> colIndicesNames = Meta.fnMapColumnToIndexName(strTableName);
         Hashtable<String, Index> colIndices = new Hashtable<>();
@@ -71,6 +72,10 @@ public class Table implements Serializable{
         }
         Comparable cmpClusteringKey = (Comparable) htblColNameValue.get(strClusteringKeyColumn);
         int iPageNumber = fnGetPageLocation(cmpClusteringKey);
+<<<<<<< HEAD
+=======
+        if (iPageNumber == -1) iPageNumber = 0;
+>>>>>>> 1fea47d0f4b489e253ccc6e90f2f0c6ec29d06ef
         Page pageBlock = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
@@ -104,7 +109,7 @@ public class Table implements Serializable{
 //        if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
 //            throw new DBAppException("Clustering Key cannot be null!");
 //        }
-//        int iPageNumber = fnBSPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
+//        int iPageNumber = fnGetPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
 //        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
 //        Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
 //        int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
@@ -123,21 +128,21 @@ public class Table implements Serializable{
         return vecCountRows.get(iPageIdx) == Page.iMaxRowsCount;
     }
 
-    public int fnBSPageLocation(Comparable oTarget){
-        int N = vecPages.size();
-        int l = 0, r = N - 1;
-        int iFirstGoodIdx = 0;
-        while (l <= r) {
-            int mid = l + r >> 1;
-            if (oTarget.compareTo(vecMin.get(mid)) >= 0) {
-                iFirstGoodIdx = mid;
-                r = mid - 1;
-            } else {
-                l = mid + 1;
-            }
-        }
-        return iFirstGoodIdx;
-    }
+//    public int fnGetPageLocation(Comparable oTarget){
+//        int N = vecPages.size();
+//        int l = 0, r = N - 1;
+//        int iFirstGoodIdx = 0;
+//        while (l <= r) {
+//            int mid = l + r >> 1;
+//            if (oTarget.compareTo(vecMin.get(mid)) >= 0) {
+//                iFirstGoodIdx = mid;
+//                r = mid - 1;
+//            } else {
+//                l = mid + 1;
+//            }
+//        }
+//        return iFirstGoodIdx;
+//    }
 
     public int fnGetPageLocation(Comparable oTarget){
         int N = vecPages.size();
@@ -176,7 +181,8 @@ public class Table implements Serializable{
 
     public String fnGetKeyPage(Comparable oTarget){
         if (isEmpty()) return null;
-        int iPageNumber = fnBSPageLocation(oTarget);
+        int iPageNumber = fnGetPageLocation(oTarget);
+        if (iPageNumber == -1) iPageNumber = 0;
         return vecPages.get(iPageNumber);
     }
 
