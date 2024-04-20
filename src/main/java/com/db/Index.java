@@ -183,10 +183,10 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         }
         return null;
     }
-//    @Override
-//    public String toString(){
-//        return btree.getTreeStructure((TKey) findMinInIndex());
-//    }
+    @Override
+    public String toString(){
+        return btree.getTreeStructure();
+    }
 
 }
 
