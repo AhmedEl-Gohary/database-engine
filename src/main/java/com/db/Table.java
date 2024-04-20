@@ -70,7 +70,7 @@ public class Table implements Serializable{
             throw new DBAppException("Clustering Key cannot be null!");
         }
         Comparable cmpClusteringKey = (Comparable) htblColNameValue.get(strClusteringKeyColumn);
-        int iPageNumber = fnBSPageLocation(cmpClusteringKey);
+        int iPageNumber = fnGetPageLocation(cmpClusteringKey);
         Page pageBlock = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
@@ -156,7 +156,7 @@ public class Table implements Serializable{
     }
 
     public void fnDeleteEntry(Entry entry){
-        int iPageNumber = fnBSPageLocation(entry.fnEntryID());
+        int iPageNumber = fnGetPageLocation(entry.fnEntryID());
         Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entry);
         if (iEntryIdx >= 0){

@@ -123,7 +123,11 @@ public class DBApp {
         }
         Vector<Entry> vecResults = new Vector<>();
         Vector<PairOfIndexColName> vecOfPairs = Meta.getIndexesNamesInTable(strTableName);
-
+        Vector<PairOfIndexColName> vec = new Vector<>();
+        for (PairOfIndexColName i : vecOfPairs){
+            if (htblColNameValue.containsKey(i.strColumnName)) vec.add(i);
+        }
+        vecOfPairs = vec;
         Table tableInstance = (Table) deserialize(strTableName);
         String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
         if(htblColNameValue.containsKey(strClusteringKeyName)){
@@ -211,30 +215,46 @@ public class DBApp {
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
             Hashtable<String,Object> ht = new Hashtable<>();
-            ht.put("name", new String("ahmed"));
+            ht.put("name", new String("yasser"));
             ht.put("id", new Integer(1));
             ht.put("gpa", new Double(0.9));
             dbApp.insertIntoTable(strTableName, ht);
 
+
+
+
             ht.put("name", "tawfik");
-            ht.put("id", new Integer(3));
+            ht.put("id", new Integer(2));
             ht.put("gpa", new Double(3));
             dbApp.insertIntoTable(strTableName, ht);
-            Table table = (Table) deserialize(strTableName);
-            table= (Table) deserialize(strTableName);
-            System.out.println(table);
-            dbApp.createIndex(strTableName,"id","Goahry");
+            dbApp.createIndex(strTableName,"id","yasser");
             ht.put("name", new String("yasser"));
             ht.put("id", new Integer(4));
             ht.put("gpa", new Double(2));
             dbApp.insertIntoTable(strTableName, ht);
-            table= (Table) deserialize(strTableName);
+            ht.put("name", new String("ali"));
+            ht.put("id", new Integer(5));
+            ht.put("gpa", new Double(2));
+            dbApp.insertIntoTable(strTableName, ht);
+            Table table= (Table) deserialize(strTableName);
             System.out.println(table);
             ht.remove("id");
-            ht.put("gpa",0.1);
-            dbApp.updateTable(strTableName,"4",ht);
+            ht.remove("gpa");
+            ht.put("name" , "yasser");
+            dbApp.deleteFromTable(strTableName ,ht);
             table= (Table) deserialize(strTableName);
+            ht.put("name", new String("alii"));
+            ht.put("id", new Integer(7));
+            ht.put("gpa", new Double(2));
+            dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", new String("aliii"));
+            ht.put("id", new Integer(6));
+            ht.put("gpa", new Double(2));
+            dbApp.insertIntoTable(strTableName, ht);
+            table= (Table) deserialize(strTableName);
+
             System.out.println(table);
+
         } catch (Throwable e) {
             e.printStackTrace();
         }finally {
