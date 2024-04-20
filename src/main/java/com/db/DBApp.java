@@ -132,7 +132,7 @@ public class DBApp {
         String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
         if(htblColNameValue.containsKey(strClusteringKeyName)){
             Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
-            if (entryInstance.equals(htblColNameValue))vecResults.add(entryInstance);
+            if (entryInstance != null && entryInstance.equals(htblColNameValue))vecResults.add(entryInstance);
         }
         else{
             if(vecOfPairs.isEmpty()){
