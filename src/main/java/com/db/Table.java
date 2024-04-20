@@ -27,7 +27,7 @@ public class Table implements Serializable{
         vecPages.add(this.strTableName + iCreatedPages);
         vecMin.add((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         Page pageInstance = new Page(this.strTableName, iCreatedPages);
-        DBApp.fnSerialize(pageInstance, strTableName + iCreatedPages);
+        DBApp.serialize(pageInstance, strTableName + iCreatedPages);
         vecCountRows.add(0);
     }
 
@@ -40,13 +40,13 @@ public class Table implements Serializable{
         Hashtable<String, String> colIndicesNames = Meta.fnMapColumnToIndexName(strTableName);
         Hashtable<String, Index> colIndices = new Hashtable<>();
         for (String colName: colIndicesNames.keySet()){
-            colIndices.put(colName, (Index) DBApp.fnDeserialize(colIndicesNames.get(colName)));
+            colIndices.put(colName, (Index) DBApp.deserialize(colIndicesNames.get(colName)));
         }
         while(entryInstance != null) {
             if (iPageNumber == vecPages.size()) {
                 fnInsertNewPage(htblColNameValue);
             }
-            Page pageInstance = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+            Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
             for (String colName: colIndices.keySet()){
                 Object value = entryInstance.getColumnValue(colName);
                 Index index = colIndices.get(colName);
@@ -56,11 +56,11 @@ public class Table implements Serializable{
             }
             entryInstance = pageInstance.fnInsertEntry(entryInstance);
             vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
-            DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
+            DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
             iPageNumber++;
         }
         for (String colName: colIndices.keySet()){
-            DBApp.fnSerialize(colIndices.get(colName), colIndicesNames.get(colName));
+            DBApp.serialize(colIndices.get(colName), colIndicesNames.get(colName));
         }
         --iPageNumber;
         vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber) + 1);
@@ -71,10 +71,10 @@ public class Table implements Serializable{
         }
         Comparable cmpClusteringKey = (Comparable) htblColNameValue.get(strClusteringKeyColumn);
         int iPageNumber = fnBSPageLocation(cmpClusteringKey);
-        Page pageBlock = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        Page pageBlock = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
-        DBApp.fnSerialize(pageBlock,vecPages.get(iPageNumber));
+        DBApp.serialize(pageBlock,vecPages.get(iPageNumber));
         if (iEntryIdx >= 0){
             return pageBlock.vecTuples.get(iEntryIdx);
         }
@@ -84,10 +84,10 @@ public class Table implements Serializable{
         if (htblColNameValue.get(strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
-        Page pageBlock = (Page) DBApp.fnDeserialize(strPageName);
+        Page pageBlock = (Page) DBApp.deserialize(strPageName);
         Entry entryTuple = new Entry(htblColNameValue, strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageBlock.vecTuples, entryTuple);
-        DBApp.fnSerialize(pageBlock,strPageName);
+        DBApp.serialize(pageBlock,strPageName);
         if (iEntryIdx >= 0){
             return pageBlock.vecTuples.get(iEntryIdx);
         }
@@ -138,22 +138,39 @@ public class Table implements Serializable{
         }
         return iFirstGoodIdx;
     }
+
+    public int fnGetPageLocation(Comparable oTarget){
+        int N = vecPages.size();
+        int l = 0, r = N - 1;
+        int iFirstGoodIdx = -1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (oTarget.compareTo(vecMin.get(mid)) >= 0) {
+                iFirstGoodIdx = mid;
+                l = mid + 1;
+            } else {
+                r = mid - 1;
+            }
+        }
+        return iFirstGoodIdx;
+    }
+
     public void fnDeleteEntry(Entry entry){
         int iPageNumber = fnBSPageLocation(entry.fnEntryID());
-        Page pageInstance = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entry);
         if (iEntryIdx >= 0){
             pageInstance.vecTuples.remove(iEntryIdx);
         }
         if(pageInstance.vecTuples.isEmpty()){
-            DBApp.fnDeleteFile(vecPages.get(iPageNumber));
+            DBApp.deleteFile(vecPages.get(iPageNumber));
             vecPages.remove(iPageNumber);
             vecMin.remove(iPageNumber);
             vecCountRows.remove(iPageNumber);
         } else{
             vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
             vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber ) - 1);
-            DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
+            DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
         }
     }
 
@@ -167,8 +184,9 @@ public class Table implements Serializable{
         if(this.isEmpty()){
             return;
         }
-        int iPageNumber = fnBSPageLocation((Comparable) htblEntryKey.get(this.strClusteringKeyColumn));
-        Page pageInstance = (Page) DBApp.fnDeserialize(vecPages.get(iPageNumber));
+        int iPageNumber = fnGetPageLocation((Comparable) htblEntryKey.get(this.strClusteringKeyColumn));
+        if (iPageNumber == -1) return;
+        Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         Entry entrySearch = new Entry(htblEntryKey,this.strClusteringKeyColumn);
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entrySearch );
         if(iEntryIdx >=0){
@@ -176,7 +194,7 @@ public class Table implements Serializable{
             this.fnUpdateTableIndecies(entryFetch ,htblColNameValue);
             entryFetch.setHtblTuple(htblColNameValue);
         }
-        DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
+        DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
     }
 
     public void fnUpdateTableIndecies(Entry e ,Hashtable<String, Object> htblColNameValue) throws DBAppException {
@@ -184,17 +202,11 @@ public class Table implements Serializable{
         for(String strColName: htblColNameValue.keySet()){
             if(Meta.fnHaveColumnIndex(this.strTableName, strColName)){
                 String strIndexName = Meta.fnGetColumnIndex(this.strTableName, strColName);
-                Index idx = (Index) DBApp.fnDeserialize(strIndexName);
+                Index idx = (Index) DBApp.deserialize(strIndexName);
                 Object objOldKey = e.getColumnValue(strColName);
                 Object objKnewValue = htblColNameValue.get(strColName);
-                if(objKnewValue == null){
-                    idx.delete((Comparable) objOldKey, e.fnEntryID());
-                    DBApp.fnSerialize(idx, strIndexName);
-                    continue;
-                }
-
                 idx.update((Comparable) objOldKey, e.fnEntryID(), (Comparable)objKnewValue);
-                DBApp.fnSerialize(idx, strIndexName);
+                DBApp.serialize(idx, strIndexName);
             }
         }
     }
@@ -226,7 +238,7 @@ public class Table implements Serializable{
     public String toString(){
         StringBuilder st = new StringBuilder();
         for(String page: vecPages){
-            Page pageInstance = (Page) DBApp.fnDeserialize(page);
+            Page pageInstance = (Page) DBApp.deserialize(page);
             st.append(pageInstance).append('\n');
         }
         return st.toString();

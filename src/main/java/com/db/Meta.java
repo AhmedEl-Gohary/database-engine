@@ -12,7 +12,7 @@ public final class Meta {
      * MetaData helper methods
      * Layout : TableName,ColumnName, ColumnType, ClusteringKey, IndexName, IndexType
      */
-    public static boolean fnSearchMetaData(String strTableName) {
+    public static boolean searchMetaData(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String line;
@@ -27,7 +27,7 @@ public final class Meta {
         return false;
     }
 
-    public static Vector<String> fnGetTableInfo(String strTableName) {
+    public static Vector<String> getTableInfo(String strTableName) {
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String columnInfo;
@@ -43,12 +43,12 @@ public final class Meta {
         }
     }
 
-    public static boolean fnCheckClusteringKey(String strTableName, Hashtable<String,Object> htblColNameValue) {
+    public static boolean checkClusteringKey(String strTableName, Hashtable<String,Object> htblColNameValue) {
         String clusteringKey = fnGetTableClusteringKey(strTableName);
         return !htblColNameValue.get(clusteringKey).equals(null);
     }
 
-    private static boolean fnIsSameType(String strValue, String strTypeName){
+    private static boolean isSameType(String strValue, String strTypeName){
         try {
             Class<?> className = Class.forName(strTypeName);
             Constructor<?> constructor = className.getConstructor(String.class);
@@ -60,9 +60,9 @@ public final class Meta {
             return false;
         }
     }
-    public static boolean fnCheckTableColumns(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public static boolean checkTableColumns(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
         Hashtable<String, String> columnTypes = new Hashtable<>();
-        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        Vector<String> tableInfo = getTableInfo(strTableName);
         for (String colInfo: tableInfo){
             columnTypes.put(fnGetColumnName(colInfo), fnGetColumnType(colInfo));
         }
@@ -71,15 +71,28 @@ public final class Meta {
                 throw new DBAppException("Invlid Column Name \'" + colName + "\'");
             }
             Object colValue = htblColNameValue.get(colName);
-            if (colValue != null && !fnIsSameType(colValue.toString(), columnTypes.get(colName))){
+            if (colValue != null && !isSameType(colValue.toString(), columnTypes.get(colName))){
                 throw new DBAppException("Invlid Column \'" + colName + "\' Value \'" + colName + "\'");
             }
         }
         return true;
     }
+    public static boolean checkTableColumnsNull(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
+        Hashtable<String, String> columnTypes = new Hashtable<>();
+        Vector<String> tableInfo = getTableInfo(strTableName);
+        for (String colInfo: tableInfo){
+            columnTypes.put(fnGetColumnName(colInfo), fnGetColumnType(colInfo));
+        }
+        for (String colName: columnTypes.keySet()){
+            if (!htblColNameValue.containsKey(colName)){
+                return false;
+            }
+        }
+        return true;
+    }
 
-    public static Vector<String> fnGetTableColumns(String strTableName) {
-        Vector<String> table = fnGetTableInfo(strTableName);
+    public static Vector<String> getTableColumns(String strTableName) {
+        Vector<String> table = getTableInfo(strTableName);
         Vector<String> tableColumns = new Vector<>();
         for (String columnInfo : table) {
             if (fnGetTableName(columnInfo).equals(strTableName)) {
@@ -89,8 +102,8 @@ public final class Meta {
         return tableColumns;
     }
 
-    public static void fnInsertTableMetaData(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException {
-        if (fnSearchMetaData(strTableName)) {
+    public static void insertTableMetaData(String strTableName, String strClusteringKeyColumn, Hashtable<String,String> htblColNameType) throws DBAppException {
+        if (searchMetaData(strTableName)) {
             throw new DBAppException("Table data is already inserted");
         }
         // Table Name, Column Name, Column Type, ClusteringKey, IndexName,IndexType
@@ -98,7 +111,7 @@ public final class Meta {
             FileWriter writer = new FileWriter(DBApp.file, true); // Append mode (optional)
 
             for (String strColName : htblColNameType.keySet()) {
-                writer.write(fnMakeRow(strTableName, strColName.equals(strClusteringKeyColumn), strColName,
+                writer.write(makeRow(strTableName, strColName.equals(strClusteringKeyColumn), strColName,
                         htblColNameType.get(strColName)) + "\n");
             }
 
@@ -108,7 +121,7 @@ public final class Meta {
         }
     }
 
-    public static String fnMakeRow(String strTableName, boolean bIsClusteringKey, String strColName, String strType) {
+    public static String makeRow(String strTableName, boolean bIsClusteringKey, String strColName, String strType) {
         String[] row = new String[6];
         row[0] = strTableName;
         row[1] = strColName;
@@ -143,7 +156,7 @@ public final class Meta {
         }
     }
 
-    public static Vector<PairOfIndexColName> fnGetIndexesNamesInTable(String strTableName)  {
+    public static Vector<PairOfIndexColName> getIndexesNamesInTable(String strTableName)  {
         try {
             Vector<PairOfIndexColName> result = new Vector<>();
             BufferedReader brReader = null;
@@ -157,7 +170,7 @@ public final class Meta {
                     }
                 }
             }
-            Vector<String> vecTableInfo = fnGetTableInfo(strTableName);
+            Vector<String> vecTableInfo = getTableInfo(strTableName);
             for(String strColInfo:vecTableInfo){
                 String strIndexName = fnGetIndexName(strColInfo);
                 String strColName = fnGetColumnName(strColInfo);
@@ -188,15 +201,15 @@ public final class Meta {
     }
 
     public static void showIndexData(String strIndexName) {
-        Index index = (Index) DBApp.fnDeserialize(strIndexName);
+        Index index = (Index) DBApp.deserialize(strIndexName);
         System.out.println(index);
     }
 
     public static void showTableData(String strTableName) {
-        Table table = (Table) DBApp.fnDeserialize(strTableName);
+        Table table = (Table) DBApp.deserialize(strTableName);
         System.out.println(table);
     }
-    public static void fnCreateIndex(String strTableName, String strColName, String strIndexName) throws DBAppException{
+    public static void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException{
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String columnInfo;
@@ -222,7 +235,7 @@ public final class Meta {
         }
     }
 
-    public static void fnDeleteIndex(String strTableName, String strColName, String strIndexName) throws DBAppException{
+    public static void deleteIndex(String strTableName, String strColName, String strIndexName) throws DBAppException{
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String columnInfo;
@@ -248,7 +261,7 @@ public final class Meta {
     }
 
     private static String[] fnGetTableColumnInfo(String strTableName, String strColName) {
-        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        Vector<String> tableInfo = getTableInfo(strTableName);
         for (String columnInfo: tableInfo){
             if (fnGetColumnName(columnInfo).equals(strColName))
                 return columnInfo.split(",");
@@ -257,7 +270,7 @@ public final class Meta {
     }
 
     public static String fnGetTableClusteringKey(String strTableName) {
-        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        Vector<String> tableInfo = getTableInfo(strTableName);
         for (String columnInfo: tableInfo){
             if (fnIsClusteringKey(columnInfo)) {
                 return fnGetColumnName(columnInfo);
@@ -308,7 +321,7 @@ public final class Meta {
         return strColumnInfo.split(",")[5];
     }
     public static Hashtable<String,String> fnMapColumnToIndexName (String strTableName){
-        Vector<String> vecTableInfo = fnGetTableInfo(strTableName);
+        Vector<String> vecTableInfo = getTableInfo(strTableName);
         Hashtable<String,String> result = new Hashtable<>();
         for(String strColumnInfo :vecTableInfo)
             if (!fnGetIndexName(strColumnInfo).equals("null"))
@@ -316,13 +329,12 @@ public final class Meta {
         return result;
     }
 }
-  class PairOfIndexColName {
+class PairOfIndexColName {
     public String strColumnName;
     public String strIndexName;
     PairOfIndexColName(String strColumnName,String strIndexName){
         this.strColumnName = strColumnName;
         this.strIndexName = strIndexName;
     }
-
 
 }

@@ -1,0 +1,213 @@
+package com.db;
+
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.Vector;
+
+public final class QueryProcessor {
+
+    public static int getPrecedence(String operator) {
+        if (operator.equals("AND")) return 2;
+        if (operator.equals("XOR")) return 1;
+        return 0;
+    }
+
+    public static Vector<Entry> applyCondition(SQLTerm sqlTerm) throws DBAppException {
+        Table tableInstance = (Table) DBApp.deserialize(sqlTerm._strTableName);
+        if (!sqlTerm._strOperator.equals("!=") && sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
+            return clusteringQueries(sqlTerm, tableInstance);
+        } else if (!sqlTerm._strOperator.equals("!=") && Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
+            Index index = (Index) DBApp.deserialize(Meta.fnGetColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName));
+            return indexQueries(sqlTerm, index);
+        } else {
+            return linearScanning(sqlTerm, tableInstance);
+        }
+
+    }
+
+    public static Vector<Entry> indexQueries(SQLTerm sqlTerm, Index index) throws DBAppException {
+        if (sqlTerm._strOperator.equals("=")) {
+            return insertFromPagesToEntries(index.search((Comparable) sqlTerm._objValue));
+        }
+        if (sqlTerm._strOperator.equals(">=")) {
+            return insertFromPagesToEntries(index.findGreaterThanOrEqualKey((Comparable) sqlTerm._objValue));
+        }
+        if (sqlTerm._strOperator.equals(">")) {
+            return insertFromPagesToEntries(index.findGreaterThanKey((Comparable) sqlTerm._objValue));
+        }
+        if (sqlTerm._strOperator.equals("<=")) {
+            return insertFromPagesToEntries(index.findLessThanOrEqualKey((Comparable) sqlTerm._objValue));
+        }
+        if (sqlTerm._strOperator.equals("<")) {
+            return insertFromPagesToEntries(index.findLessThanKey((Comparable) sqlTerm._objValue));
+        }
+        throw new DBAppException("Invalid Operator!");
+    }
+
+    public static Vector<Entry> insertFromPagesToEntries(Vector<Pair> vecPages) {
+        Vector<Entry> resultSet = new Vector<>();
+        for (Pair pair : vecPages) {
+            Comparable id = pair.getCmpClusteringKey();
+            String pageName = pair.getStrPageName();
+            Page page = (Page) DBApp.deserialize(pageName);
+            int iEntryIndex = binarySearchIndexOfEntry(page.vecTuples, id);
+            resultSet.add(page.vecTuples.get(iEntryIndex));
+        }
+        return resultSet;
+    }
+
+
+    public static Vector<Entry> clusteringQueries(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        if (sqlTerm._strOperator.equals("=")) {
+            return binarySearchClustering(sqlTerm, tableInstance);
+        }
+        if (sqlTerm._strOperator.equals(">") || sqlTerm._strOperator.equals(">=")) {
+            return scanFromTheEnd(sqlTerm, tableInstance);
+        }
+        if (sqlTerm._strOperator.equals("<") || sqlTerm._strOperator.equals("<=")) {
+            return scanFromTheBeginning(sqlTerm, tableInstance);
+        }
+        throw new DBAppException("Invalid Operator!");
+    }
+
+    public static Vector<Entry> linearScanning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (String strPageName : tableInstance.vecPages) {
+            Page page = (Page) DBApp.deserialize(strPageName);
+            for (Entry entry : page.vecTuples) {
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                DBApp.makeInstance(strColType, strColValue);
+                if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
+                    filteredResults.add(entry);
+                }
+            }
+        }
+        return filteredResults;
+    }
+
+    public static Vector<Entry> binarySearchClustering(SQLTerm sqlTerm, Table tableInstance) {
+        int iPageIndex = binarySearchPageLocation((Comparable) sqlTerm._objValue, tableInstance);
+        if (iPageIndex == -1) return new Vector<Entry>();
+        Page page = (Page) DBApp.deserialize(tableInstance.vecPages.get(iPageIndex));
+
+        int iEntryIdx = binarySearchIndexOfEntry(page.vecTuples, (Comparable) sqlTerm._objValue);
+        Vector<Entry> vecEntries = new Vector<>();
+        if (iEntryIdx >= 0){
+            vecEntries.add(page.vecTuples.get(iEntryIdx));
+        }
+        return vecEntries;
+    }
+
+    public static int binarySearchIndexOfEntry(Vector<Entry> entries, Comparable id) {
+        int N = entries.size();
+        int l = 0, r = N - 1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (entries.get(mid).fnEntryID().equals(id)) {
+                return mid;
+            }
+            if (entries.get(mid).fnEntryID().compareTo(id) > 0) {
+                r = mid - 1;
+            } else {
+                l = mid + 1;
+            }
+        }
+        return -1;
+    }
+
+    public static int binarySearchPageLocation(Comparable oTarget, Table tableInstance){
+        int N = tableInstance.vecPages.size();
+        int l = 0, r = N - 1;
+        int location = -1;
+        while (l <= r) {
+            int mid = l + r >> 1;
+            if (oTarget.compareTo(tableInstance.vecMin.get(mid)) < 0) {
+                r = mid - 1;
+            } else {
+                location = mid;
+                l = mid + 1;
+            }
+        }
+        return location;
+    }
+
+    public static Vector<Entry> scanFromTheEnd(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (int i = tableInstance.vecPages.size() - 1; i >= 0; i--) {
+            Page page = (Page) DBApp.deserialize(tableInstance.vecPages.get(i));
+            for (int j = page.vecTuples.size() - 1; j >= 0; j--) {
+                Entry entry = page.vecTuples.get(j);
+                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                    return filteredResults;
+                }
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                DBApp.makeInstance(strColType, strColValue);
+                filteredResults.add(entry);
+            }
+        }
+        return filteredResults;
+    }
+
+    public static Vector<Entry> scanFromTheBeginning(SQLTerm sqlTerm, Table tableInstance) throws DBAppException {
+        Vector<Entry> filteredResults = new Vector<>();
+        for (String strPageName : tableInstance.vecPages) {
+            Page page = (Page) DBApp.deserialize(strPageName);
+            for (Entry entry : page.vecTuples) {
+                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                    return filteredResults;
+                }
+                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColValue = (String) (sqlTerm._objValue.toString());
+                DBApp.makeInstance(strColType, strColValue);
+                filteredResults.add(entry);
+            }
+        }
+        return filteredResults;
+    }
+
+    public static boolean evaluateCondition(Object columnValue, String operator, Object value) {
+        switch (operator) {
+            case "=":
+                return columnValue.equals(value);
+            case ">":
+                return ((Comparable) columnValue).compareTo(value) > 0;
+            case "<":
+                return ((Comparable) columnValue).compareTo(value) < 0;
+            case "<=":
+                return ((Comparable) columnValue).compareTo(value) <= 0;
+            case ">=":
+                return ((Comparable) columnValue).compareTo(value) >= 0;
+            case "!=":
+                return ((Comparable) columnValue).compareTo(value) != 0;
+        }
+        return false;
+    }
+
+    public static Vector<Entry> combineResults(Vector<Entry> results1, Vector<Entry> results2, String operator) throws DBAppException {
+        if (operator.equals("AND")) {
+            results1.retainAll(results2);
+            return results1;
+        }
+        if (operator.equals("OR")) {
+            Set<Entry> set = new TreeSet<>(results1);
+            set.addAll(results2);
+            return new Vector<>(set);
+        }
+        if (operator.equals("XOR")) {
+            Set<Entry> set1 = new TreeSet<>(results1);
+            Set<Entry> set2 = new TreeSet<>(results2);
+
+            Set<Entry> union = new TreeSet<>(set1);
+            union.addAll(set2);
+            Set<Entry> intersection = new TreeSet<>(set1);
+            intersection.retainAll(set2);
+            union.removeAll(intersection);
+
+            return new Vector<>(union);
+        }
+        throw new DBAppException("Invalid Operator " + operator);
+    }
+    
+}

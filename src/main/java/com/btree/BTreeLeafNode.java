@@ -1,6 +1,10 @@
 package com.btree;
 
 
+import com.db.DBApp;
+import com.db.DBAppException;
+import com.db.Meta;
+
 public class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKey> {
     protected final static int LEAFORDER = 4;
     private Object[] values;
@@ -36,7 +40,14 @@ public class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeN
     @Override
     public int search(TKey key) {
         for (int i = 0; i < this.getKeyCount(); ++i) {
-            int cmp = this.getKey(i).compareTo(key);
+            TKey obj = getKey(i);
+            Object val;
+            try {
+                val = DBApp.makeInstance(obj.getClass().getTypeName(), "" + obj.toString());
+            } catch (DBAppException e) {
+                throw new RuntimeException(e);
+            }
+            int cmp = this.getKey(i).compareTo((TKey) val);
             if (cmp == 0) {
                 return i;
             }

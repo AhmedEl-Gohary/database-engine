@@ -3,16 +3,12 @@ package com.db;
 
 import com.btree.*;
 
-import javax.swing.plaf.metal.MetalIconFactory;
 import java.io.Serializable;
-import java.lang.reflect.TypeVariable;
-import java.util.Random;
 import java.util.Vector;
 
 public class Index<TKey extends Comparable<TKey>> implements Serializable {
     BTree<TKey, Vector<Pair>> btree;
     String strIndexName, strTableName, strIndexColumn;
-    TKey minKey = null, maxKey = null;
 
     public Index() {}
 
@@ -25,13 +21,13 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     }
 
     private void build() {
-        Table tableInstance = (Table) DBApp.fnDeserialize(strTableName);
+        Table tableInstance = (Table) DBApp.deserialize(strTableName);
         for (String page : tableInstance.vecPages) {
             addPage(page);
         }
     }
     private void addPage(String strPageName) {
-        Page pageInstance = (Page) DBApp.fnDeserialize(strPageName);
+        Page pageInstance = (Page) DBApp.deserialize(strPageName);
         for (Entry entry : pageInstance.vecTuples) {
             Comparable clusteringKey = (Comparable) entry.fnEntryID();
             TKey key = (TKey) entry.getColumnValue(strIndexColumn);
@@ -40,12 +36,6 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     }
 
     public void insert(TKey key, Pair value) {
-        if(minKey == null)
-            minKey = key;
-        else{
-            if( minKey.compareTo(key) > 0)
-                minKey = key;
-        }
         Vector<Pair> curValue = btree.search(key);
         if (curValue == null) { // need to insert
             Vector<Pair> vecEntry = new Vector<>();
@@ -167,12 +157,6 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     public void update(TKey key, Comparable clusteringKey, TKey newKey) {
         String strPageName = search(key, clusteringKey);
         if (strPageName == null) return;
-        if(minKey == null)
-            minKey = key;
-        else{
-            if( minKey.compareTo(key) > 0)
-                minKey = key;
-        }
         delete(key, clusteringKey);
         insert(newKey, new Pair(clusteringKey, strPageName));
     }
@@ -199,10 +183,10 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
         }
         return null;
     }
-    @Override
-    public String toString(){
-        return btree.getTreeStructure(minKey);
-    }
+//    @Override
+//    public String toString(){
+//        return btree.getTreeStructure((TKey) findMinInIndex());
+//    }
 
 }
 
