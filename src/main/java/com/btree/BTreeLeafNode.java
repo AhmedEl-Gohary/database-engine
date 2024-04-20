@@ -40,14 +40,7 @@ public class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeN
     @Override
     public int search(TKey key) {
         for (int i = 0; i < this.getKeyCount(); ++i) {
-            TKey obj = getKey(i);
-            Object val;
-            try {
-                val = DBApp.makeInstance(obj.getClass().getTypeName(), "" + obj.toString());
-            } catch (DBAppException e) {
-                throw new RuntimeException(e);
-            }
-            int cmp = this.getKey(i).compareTo((TKey) val);
+            int cmp = this.getKey(i).compareTo(key);
             if (cmp == 0) {
                 return i;
             }

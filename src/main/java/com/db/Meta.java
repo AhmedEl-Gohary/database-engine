@@ -45,7 +45,7 @@ public final class Meta {
 
     public static boolean checkClusteringKey(String strTableName, Hashtable<String,Object> htblColNameValue) {
         String clusteringKey = fnGetTableClusteringKey(strTableName);
-        return !htblColNameValue.get(clusteringKey).equals(null);
+        return htblColNameValue.get(clusteringKey) != null;
     }
 
     private static boolean isSameType(String strValue, String strTypeName){

@@ -234,18 +234,18 @@ public class DBApp {
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
             Hashtable<String,Object> ht = new Hashtable<>();
-            ht.put("name", "ahmed");
-            ht.put("id", 1);
-            ht.put("gpa", 0.9);
+            ht.put("name", new String("ahmed"));
+            ht.put("id", new Integer(1));
+            ht.put("gpa", new Double(0.9));
             dbApp.insertIntoTable(strTableName, ht);
-            ht.put("name", "yasser");
-            ht.put("id", 2);
-            ht.put("gpa", 2);
+            ht.put("name", new String("yasser"));
+            ht.put("id", new Integer(2));
+            ht.put("gpa", new Double(2));
             dbApp.insertIntoTable(strTableName, ht);
 
             ht.put("name", "tawfik");
-            ht.put("id", 3);
-            ht.put("gpa", 3);
+            ht.put("id", new Integer(3));
+            ht.put("gpa", new Double(3));
             dbApp.insertIntoTable(strTableName, ht);
 
 //            ht.put("name", "abdelwahab");
@@ -274,12 +274,12 @@ public class DBApp {
             Table table = (Table) deserialize(strTableName);
             System.out.println(table);
             ht.remove("id");
-            ht.put("id", 1);
+//            ht.put("id", new Integer(1));
             dbApp.updateTable(strTableName, "1", ht);
             table= (Table) deserialize(strTableName);
 
             System.out.println(table);
-            ht.put("gpa", 0.8);
+            ht.put("gpa", new Double(0.9));
             dbApp.updateTable(strTableName, "2", ht);
             table= (Table) deserialize(strTableName);
 
