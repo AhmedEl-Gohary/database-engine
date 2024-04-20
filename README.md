@@ -23,13 +23,13 @@ TinyDB is a simplified engine and does not currently support:
 
 ### Usage
 
-**1. Initialization (Optional):**
+**1. Initialization:**
 
 Call the `init()` method to perform any necessary initialization tasks.
 
 **2. Create Table:**
 
-Use the `createTable` method to define a new table. Specify the table name, primary key (clustering column) name, and a hashtable (`htblColNameType`) mapping column names to their corresponding data types.
+Use the `createTable` method to define a new table. Specify the table name `strTableName`, primary key `strClusteringKeyColumn` name, and a hashtable `htblColNameType` mapping column names to their corresponding data types.
 
 ```java
 Hashtable<String, String> colNameType = new Hashtable<>();
@@ -43,14 +43,14 @@ db.createTable("students", "id", colNameType);
 This method allows you to create B+ tree indexes on specific table columns for faster searching.
 
 ```java
-db.createIndex(String tableName, String columnName, String indexName);
+db.createIndex(String strTableName, String strColName, String strIndexName);
 ```
 
 **Parameters:**
 
-`tableName`: The name of the table you want to create the index on.
-`columnName`: The name of the column you want to create the index on.
-`indexName`: A desired name for the index. 
+`strTableName`: The name of the table you want to create the index on.
+`strColName`: The name of the column you want to create the index on.
+`strIndexName`: A desired name for the index. 
 
 **4. Data Operations:**
 
