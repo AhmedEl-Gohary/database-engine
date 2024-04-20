@@ -1,3 +1,8 @@
+/**
+ * The DBApp class represents a simple database application.
+ * It provides functionalities to create tables, indexes, insert, update, delete, and select data.
+ */
+
 package com.db;
 
 import java.io.*;
@@ -6,16 +11,27 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class DBApp {
+    /**
+     * The rootPath variable stores the path of the current project's root directory.
+     */
 
     static String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+
+    /**
+     * The file variable stores the path of the metadata file.
+     */
     static String file = rootPath + "metadata.csv";
+    /**
+     * Constructs a DBApp object and initializes the application.
+     */
     public DBApp() {
         init();
     }
 
-    // this does whatever initialization you would like
-    // or leave it empty if there is no code you want to
-    // execute at application startup
+    /**
+     * Initializes the application by loading configuration properties.
+     */
+
     public void init( ){
         String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
         String appConfigPath = rootPath + "DBApp.config";
@@ -29,12 +45,14 @@ public class DBApp {
     }
 
 
-    // following method creates one table only
-    // strClusteringKeyColumn is the name of the column that will be the primary
-    // key and the clustering column as well. The data type of that column will
-    // be passed in htblColNameType
-    // htblColNameValue will have the column name as key and the data
-    // type as value
+    /**
+     * Creates a new table with the specified parameters.
+     *
+     * @param strTableName The name of the table.
+     * @param strClusteringKeyColumn The name of the primary key and clustering column.
+     * @param htblColNameType A Hashtable containing column names and their corresponding data types.
+     * @throws DBAppException if the table already exists.
+     */
     public void createTable(String strTableName, String strClusteringKeyColumn, Hashtable<String, String> htblColNameType) throws DBAppException{
         if (isExistingFile(strTableName))
             throw new DBAppException("This table already exists!");
@@ -43,8 +61,15 @@ public class DBApp {
         serialize(tableInstance, strTableName);
     }
 
+    /**
+     * Creates a B+tree index on the specified column of a table.
+     *
+     * @param strTableName The name of the table.
+     * @param strColName The name of the column to index.
+     * @param strIndexName The name of the index.
+     * @throws DBAppException if the table doesn't exist or the column doesn't exist in the table.
+     */
 
-    // following method creates a B+tree index
     public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException {
         if (!isExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist!");
@@ -65,8 +90,13 @@ public class DBApp {
     }
 
 
-    // following method inserts one row only.
-    // htblColNameValue must include a value for the primary key
+    /**
+     * Inserts a new row into the specified table.
+     *
+     * @param strTableName The name of the table.
+     * @param htblColNameValue A Hashtable containing column names and their corresponding values for the new row.
+     * @throws DBAppException if the table doesn't exist or required column values are missing.
+     */
     public void insertIntoTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
         if (!isExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
@@ -78,10 +108,14 @@ public class DBApp {
     }
 
 
-    // following method updates one row only
-    // htblColNameValue holds the key and new value
-    // htblColNameValue will not include clustering key as column name
-    // strClusteringKeyValue is the value to look for to find the row to update.
+     /**
+     * Updates a row in the specified table.
+     *
+     * @param strTableName The name of the table.
+     * @param strClusteringKeyValue The value of the clustering key to identify the row to update.
+     * @param htblColNameValue A Hashtable containing column names and their new values.
+     * @throws DBAppException if the table doesn't exist, or clustering key cannot be updated.
+     */
     public void updateTable(String strTableName, String strClusteringKeyValue, Hashtable<String, Object> htblColNameValue) throws DBAppException {
         if (!isExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
@@ -103,10 +137,13 @@ public class DBApp {
     }
 
 
-    // following method could be used to delete one or more rows.
-    // htblColNameValue holds the key and value. This will be used in search
-    // to identify which rows/tuples to delete.
-    // htblColNameValue enteries are ANDED together
+    /**
+     * Deletes one or more rows from the specified table based on given conditions.
+     *
+     * @param strTableName The name of the table.
+     * @param htblColNameValue A Hashtable containing column names and values for identifying rows to delete.
+     * @throws DBAppException if the table doesn't exist or column values are missing.
+     */
     public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
         if (!isExistingFile(strTableName))
@@ -168,6 +205,14 @@ public class DBApp {
         }
         serialize(tableInstance, strTableName);
     }
+    /**
+     * Selects rows from the specified table based on given SQL terms and operators.
+     *
+     * @param arrSQLTerms An array of SQLTerm objects representing conditions.
+     * @param strarrOperators An array of operators (AND, OR) to combine conditions.
+     * @return An iterator over the selected rows.
+     * @throws DBAppException if no conditions are provided or if there's a mismatch between operators and terms.
+     */
 
     public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws DBAppException {
         if (arrSQLTerms == null || arrSQLTerms.length == 0) {
@@ -278,6 +323,13 @@ public class DBApp {
             removeTable(strTableName);
         }
     }
+    /**
+     * Serializes an object to a file.
+     *
+     * @param serObj The object to serialize.
+     * @param strObjectName The name of the object.
+     */
+
     public static void serialize(Serializable serObj, String strObjectName){
         try {
             FileOutputStream fileOut = new FileOutputStream(strObjectName + ".class");
@@ -289,6 +341,33 @@ public class DBApp {
             e.printStackTrace();
         }
     }
+    /**
+     * Deserializes an object from a file.
+     *
+     * @param strObjectName The name of the object.
+     * @return The deserialized object.
+     */
+
+    public static Object deserialize(String strObjectName){
+        Object oObj = null;
+        try {
+            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            oObj =  in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return oObj;
+    }
+
+    /**
+     * Checks if a file with the specified name exists.
+     *
+     * @param strObjectName The name of the file.
+     * @return true if the file exists, false otherwise.
+     */
 
     public static boolean isExistingFile(String strObjectName) {
         Object oObj = null;
@@ -307,25 +386,26 @@ public class DBApp {
         return false;
     }
 
-    public static Object deserialize(String strObjectName){
-        Object oObj = null;
-        try {
-            FileInputStream fileIn = new FileInputStream(strObjectName + ".class");
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            oObj =  in.readObject();
-            in.close();
-            fileIn.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return oObj;
-    }
+    /**
+     * Deletes a file with the specified name.
+     *
+     * @param strObjectName The name of the file to delete.
+     */
+
     public static void deleteFile(String strObjectName){
         File serializedFile = new File(strObjectName);
         if (serializedFile.exists())
             serializedFile.delete();
 
     }
+    /**
+     * Instantiates an object of a specified class with a given value.
+     *
+     * @param strColType The class type.
+     * @param strColValue The value to initialize the object.
+     * @return The instantiated object.
+     * @throws DBAppException if the column type or value is invalid.
+     */
 
     public static Object makeInstance(String strColType, String strColValue) throws DBAppException {
         try {
@@ -338,6 +418,12 @@ public class DBApp {
             throw new DBAppException("Invalid Column Value " + strColType);
         }
     }
+    /**
+     * Removes a table and its associated metadata.
+     *
+     * @param strTableName The name of the table to remove.
+     */
+
     public static void removeTable(String strTableName) {
         Table table = (Table) deserialize(strTableName);
         for (String page : table.vecPages) {
@@ -348,6 +434,12 @@ public class DBApp {
         File file = new File(strTableName + ".class");
         file.delete();
     }
+    /**
+     * Clears all data from a table.
+     *
+     * @param strTableName The name of the table to clear.
+     */
+
     public static void clearTable(String strTableName){
         Table table = (Table) deserialize(strTableName);
         for (String page : table.vecPages) {
@@ -357,13 +449,24 @@ public class DBApp {
         table.clear();
         serialize(table, strTableName);
     }
-    public  void clearTableAndIndex(String strTableName) throws DBAppException {
-        DBApp.clearTable(strTableName);
+
+    public void clearIndexes(String strTableName) throws DBAppException {
         Vector<PairOfIndexColName> vec = Meta.getIndexesNamesInTable(strTableName);
         for(PairOfIndexColName pair:vec){
             Meta.deleteIndex(strTableName, pair.strColumnName, pair.strIndexName);
             createIndex(strTableName,pair.strColumnName, pair.strIndexName);
         }
+    }
+    /**
+     * Clears all data from a table and rebuilds associated indexes.
+     *
+     * @param strTableName The name of the table to clear.
+     * @throws DBAppException if an error occurs during index recreation.
+     */
+
+    public  void clearTableAndIndex(String strTableName) throws DBAppException {
+        DBApp.clearTable(strTableName);
+        clearIndexes(strTableName);
     }
 
 }
