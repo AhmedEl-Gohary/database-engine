@@ -108,7 +108,7 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
                 }
                 else break l;
             }
-            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
+            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getRightSibling();
         }
         return ans;
     }
@@ -124,7 +124,7 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
                 }
                 else break l;
             }
-            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getLeftSibling();
+            treeNode = (BTreeLeafNode<TKey, Vector<Pair>>) treeNode.getRightSibling();
         }
         return ans;
     }
