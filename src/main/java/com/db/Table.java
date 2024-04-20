@@ -31,7 +31,7 @@ public class Table implements Serializable{
         vecCountRows.add(0);
     }
 
-    public String fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
+    public void fnInsertEntry(Hashtable<String,Object> htblColNameValue) throws DBAppException{
         if (htblColNameValue.get(this.strClusteringKeyColumn) == null) {
             throw new DBAppException("Clustering Key cannot be null!");
         }
@@ -64,7 +64,6 @@ public class Table implements Serializable{
         }
         --iPageNumber;
         vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber) + 1);
-        return vecPages.get(iPageNumber);
     }
     public Entry fnSearchEntryWithClusteringKey(Hashtable<String,Object> htblColNameValue,String strClusteringKeyColumn) throws DBAppException {
         if (htblColNameValue.get(strClusteringKeyColumn) == null) {

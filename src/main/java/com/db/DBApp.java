@@ -63,7 +63,7 @@ public class DBApp {
             index = new Index<String>(strIndexName, strTableName, strColName);
         }
         fnSerialize(index, strIndexName);
-        Meta.fnUpdateTableMetaData(strTableName, strColName, strIndexName);
+        Meta.fnCreateIndex(strTableName, strColName, strIndexName);
     }
 
 
@@ -73,15 +73,7 @@ public class DBApp {
         if (!fnIsExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist");
         Table tableInstance = (Table) fnDeserialize(strTableName);
-        String strPageName = tableInstance.fnInsertEntry(htblColNameValue);
-        String strClusteringKey = Meta.fnGetTableClusteringKey(strTableName);
-        Vector<PairOfIndexColName> vecIndexesNames = Meta.fnGetIndexesNamesInTable(strTableName);
-        for(PairOfIndexColName pairOfIndexColName:vecIndexesNames) {
-            Index indexInstance = (Index)fnDeserialize(pairOfIndexColName.strIndexName);
-            indexInstance.insert((Comparable) htblColNameValue.get(pairOfIndexColName.strColumnName),
-                    new Pair((Comparable) htblColNameValue.get(strClusteringKey),strPageName));
-            fnSerialize(indexInstance,pairOfIndexColName.strIndexName);
-        }
+        tableInstance.fnInsertEntry(htblColNameValue);
         fnSerialize(tableInstance, strTableName);
     }
 
@@ -137,6 +129,7 @@ public class DBApp {
         // here i am, therefore i code
         if(htblColNameValue.isEmpty()){
             clearTableAndIndex(strTableName);
+            return;
         }
         Vector<Entry> vecResults = new Vector<>();
         Vector<PairOfIndexColName> vecOfPairs = Meta.fnGetIndexesNamesInTable(strTableName);
@@ -145,7 +138,7 @@ public class DBApp {
         String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
         if(htblColNameValue.containsKey(strClusteringKeyName)){
             Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
-            vecResults.add(entryInstance);
+            if (entryInstance.equals(htblColNameValue))vecResults.add(entryInstance);
         }
         else{
             if(vecOfPairs.isEmpty()){
@@ -154,11 +147,9 @@ public class DBApp {
                 for (String strPageName : tableInstance.vecPages) {
                     Page page = (Page) fnDeserialize(strPageName);
                     for (Entry entry : page.vecTuples) {
-                        boolean ok = true;
-                        for(String strColName:htblColNameValue.keySet())
-                            ok &= entry.getColumnValue(strColName).equals(htblColNameValue.get(strColName));
-                        if(ok)
+                        if (entry.equals(htblColNameValue)) {
                             vecResults.add(entry);
+                        }
                     }
                 }
             }
@@ -167,24 +158,22 @@ public class DBApp {
                 Vector<Pair> vecOfSubResults = indexInstance.search((Comparable)htblColNameValue.get(vecOfPairs.get(0).strColumnName));
                 for(Pair pair:vecOfSubResults) {
                     Entry entry = tableInstance.fnSearchInPageWithClusteringKey(pair);
-                    boolean ok = true;
-                    for(String strColName:htblColNameValue.keySet())
-                        ok &= entry.getColumnValue(strColName).equals(htblColNameValue.get(strColName));
-                    if(ok)
+                    if (entry.equals(htblColNameValue)) {
                         vecResults.add(entry);
-                }
-                for(PairOfIndexColName pair:vecOfPairs) {
-                    indexInstance = (Index)fnDeserialize(pair.strIndexName);
-                    for(Entry entry : vecResults){
-                        indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
                     }
-                    fnSerialize(indexInstance,pair.strIndexName);
                 }
             }
         }
-        for(Entry entry: vecResults)
+        for(PairOfIndexColName pair:vecOfPairs) {
+            Index indexInstance = (Index)fnDeserialize(pair.strIndexName);
+            for(Entry entry : vecResults){
+                indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
+            }
+            fnSerialize(indexInstance,pair.strIndexName);
+        }
+        for(Entry entry: vecResults) {
             tableInstance.fnDeleteEntry(entry);
-
+        }
         fnSerialize(tableInstance, strTableName);
     }
 
@@ -640,6 +629,7 @@ public class DBApp {
         DBApp.clearTable(strTableName);
         Vector<PairOfIndexColName> vec = Meta.fnGetIndexesNamesInTable(strTableName);
         for(PairOfIndexColName pair:vec){
+            Meta.fnDeleteIndex(strTableName, pair.strColumnName, pair.strIndexName);
             createIndex(strTableName,pair.strColumnName, pair.strIndexName);
         }
     }

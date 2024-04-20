@@ -61,9 +61,13 @@ public final class Meta {
         }
     }
     public static boolean fnCheckTableColumns(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException{
-        Hashtable<String, String> columnTypes = fnMapColumnToIndexName(strTableName);
+        Hashtable<String, String> columnTypes = new Hashtable<>();
+        Vector<String> tableInfo = fnGetTableInfo(strTableName);
+        for (String colInfo: tableInfo){
+            columnTypes.put(fnGetColumnName(colInfo), fnGetColumnType(colInfo));
+        }
         for (String colName: htblColNameValue.keySet()){
-            if (!columnTypes.contains(colName)){
+            if (!columnTypes.containsKey(colName)){
                 throw new DBAppException("Invlid Column Name \'" + colName + "\'");
             }
             Object colValue = htblColNameValue.get(colName);
@@ -177,11 +181,22 @@ public final class Meta {
             while ((columnInfo = brReader.readLine()) != null) {
                 System.out.println(columnInfo);
             }
+            System.out.println();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    public static void fnUpdateTableMetaData(String strTableName, String strColName, String strIndexName) throws DBAppException{
+
+    public static void showIndexData(String strIndexName) {
+        Index index = (Index) DBApp.fnDeserialize(strIndexName);
+        System.out.println(index);
+    }
+
+    public static void showTableData(String strTableName) {
+        Table table = (Table) DBApp.fnDeserialize(strTableName);
+        System.out.println(table);
+    }
+    public static void fnCreateIndex(String strTableName, String strColName, String strIndexName) throws DBAppException{
         try {
             BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
             String columnInfo;
@@ -194,6 +209,31 @@ public final class Meta {
                     }
                     info[4] = strIndexName;
                     info[5] = "B+tree";
+                }
+                data.add(String.join(",", info));
+            }
+            FileWriter writer = new FileWriter(DBApp.file, false);
+            for (String record: data){
+                writer.write(record + '\n');
+            }
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void fnDeleteIndex(String strTableName, String strColName, String strIndexName) throws DBAppException{
+        try {
+            BufferedReader brReader = new BufferedReader(new FileReader(DBApp.file));
+            String columnInfo;
+            Vector<String> data = new Vector<>();
+            while ((columnInfo = brReader.readLine()) != null) {
+                String[] info = columnInfo.split(",");
+                if (fnGetTableName(columnInfo).equals(strTableName) && fnGetColumnName(columnInfo).equals(strColName)) {
+                    if(fnGetIndexName(columnInfo).equals(strIndexName)) {
+                        info[4] = "null";
+                        info[5] = "null";
+                    }
                 }
                 data.add(String.join(",", info));
             }

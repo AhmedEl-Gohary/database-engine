@@ -59,6 +59,15 @@ public class Entry implements Serializable, Comparable<Entry>{
         return compareTo((Entry) obj) == 0;
     }
 
+    public boolean equals(Hashtable<String, Object> htblColNameValue) {
+        for(String strColName:htblColNameValue.keySet()) {
+            if (!getColumnValue(strColName).equals(htblColNameValue.get(strColName))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public int hashCode() {
         return fnEntryID().hashCode();

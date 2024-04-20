@@ -156,6 +156,10 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
 
     public void updatePage(TKey key, Comparable strClusteringKeyValue, String strNewPage) {
         Vector<Pair> curValue = delete(key, strClusteringKeyValue);
+        if (curValue == null){
+            insert(key, new Pair(strClusteringKeyValue, strNewPage));
+            return;
+        }
         for (Pair pair : curValue) {
             if (strClusteringKeyValue.equals(pair.getCmpClusteringKey())) {
                 insert(key, new Pair(strClusteringKeyValue, strNewPage));
@@ -192,7 +196,8 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
                 toBeDeleted.add(pair);
                 toBeInserted.remove(pair);
                 btree.delete(key);
-                btree.insert(key, toBeInserted);
+                if (!toBeInserted.isEmpty())
+                    btree.insert(key, toBeInserted);
                 return toBeDeleted;
             }
         }
