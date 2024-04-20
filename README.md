@@ -1,4 +1,5 @@
-## TinyDB: A Simplified Database Engine in Java with B+ Tree Indexing
+## TinyDB 
+### A Simplified Database Engine in Java with B+ Tree Indexing
 
 TinyDB is a lightweight, in-memory database engine designed for educational and demonstration purposes. It offers basic functionalities for managing data in tables and leverages B+ trees for efficient searching.
 
