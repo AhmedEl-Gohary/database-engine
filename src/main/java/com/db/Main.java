@@ -53,6 +53,7 @@ public class Main {
             htblColNameValue.put("gpa", new Double( 0.88 ) );
             dbApp.insertIntoTable( strTableName , htblColNameValue );
 
+
             Meta.showTableData(strTableName);
             Meta.showIndexData("gpaIndex");
             SQLTerm[] arrSQLTerms;

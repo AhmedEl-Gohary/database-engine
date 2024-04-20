@@ -163,7 +163,7 @@ public class Table implements Serializable{
         return vecPages.get(iPageNumber);
     }
 
-    public void fnUpdateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue){
+    public void fnUpdateEntry(Hashtable<String, Object> htblEntryKey, Hashtable<String, Object> htblColNameValue) throws DBAppException {
         if(this.isEmpty()){
             return;
         }
@@ -173,11 +173,30 @@ public class Table implements Serializable{
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entrySearch );
         if(iEntryIdx >=0){
             Entry entryFetch =  pageInstance.vecTuples.get(iEntryIdx);
+            this.fnUpdateTableIndecies(entryFetch ,htblColNameValue);
             entryFetch.setHtblTuple(htblColNameValue);
-
-
         }
         DBApp.fnSerialize(pageInstance, vecPages.get(iPageNumber));
+    }
+
+    public void fnUpdateTableIndecies(Entry e ,Hashtable<String, Object> htblColNameValue) throws DBAppException {
+
+        for(String strColName: htblColNameValue.keySet()){
+            if(Meta.fnHaveColumnIndex(this.strTableName, strColName)){
+                String strIndexName = Meta.fnGetColumnIndex(this.strTableName, strColName);
+                Index idx = (Index) DBApp.fnDeserialize(strIndexName);
+                Object objOldKey = e.getColumnValue(strColName);
+                Object objKnewValue = htblColNameValue.get(strColName);
+                if(objKnewValue == null){
+                    idx.delete((Comparable) objOldKey, e.fnEntryID());
+                    DBApp.fnSerialize(idx, strIndexName);
+                    continue;
+                }
+
+                idx.update((Comparable) objOldKey, e.fnEntryID(), (Comparable)objKnewValue);
+                DBApp.fnSerialize(idx, strIndexName);
+            }
+        }
     }
 
 
