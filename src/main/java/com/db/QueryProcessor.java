@@ -273,7 +273,7 @@ public final class QueryProcessor {
         }
         return false;
     }
-    
+
     /**
      * Combines two result sets using the specified operator.
      *
