@@ -8,6 +8,8 @@ package com.db;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class DBApp {
@@ -24,7 +26,7 @@ public class DBApp {
     /**
      * Constructs a DBApp object and initializes the application.
      */
-    public DBApp() {
+    public DBApp() throws IOException {
         init();
     }
 
@@ -32,13 +34,13 @@ public class DBApp {
      * Initializes the application by loading configuration properties.
      */
 
-    public void init( ){
+    public void init( ) throws IOException {
         String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
         String appConfigPath = rootPath + "DBApp.config";
         Properties p = new Properties();
         try {
             p.load(new FileInputStream(appConfigPath));
-        }catch (IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         Page.iMaxRowsCount = Integer.parseInt(p.getProperty("MaximumRowsCountinPage"));
@@ -73,9 +75,9 @@ public class DBApp {
     public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException {
         if (!isExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist!");
-        if (!Meta.fnCheckTableColumn(strTableName, strColName))
+        if (!Meta.checkTableColumn(strTableName, strColName))
             throw new DBAppException("There are no columns with this name in the table!");
-        String strColumnType = Meta.fnGetColumnType(strTableName, strColName);
+        String strColumnType = Meta.getColumnType(strTableName, strColName);
         String[] tokens = strColumnType.split("\\.");
         Index index;
         if (tokens[2].equals("Double")) {
@@ -103,12 +105,12 @@ public class DBApp {
         if (!Meta.checkTableColumnsNull(strTableName, htblColNameValue))
             throw new DBAppException("Missing Columns Values");
         Table tableInstance = (Table) deserialize(strTableName);
-        tableInstance.fnInsertEntry(htblColNameValue);
+        tableInstance.insertEntry(htblColNameValue);
         serialize(tableInstance, strTableName);
     }
 
 
-     /**
+    /**
      * Updates a row in the specified table.
      *
      * @param strTableName The name of the table.
@@ -122,14 +124,14 @@ public class DBApp {
         if (Meta.checkClusteringKey(strTableName, htblColNameValue))
             throw new DBAppException("Cannot Update Clustering Key");
         Meta.checkTableColumns(strTableName, htblColNameValue);
-        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
-        String strClusteringKeyType = Meta.fnGetColumnType(strTableName , strClusteringKeyName);
+        String strClusteringKeyName = Meta.getTableClusteringKey(strTableName);
+        String strClusteringKeyType = Meta.getColumnType(strTableName , strClusteringKeyName);
         Object objClusteringKeyValue = makeInstance(strClusteringKeyType, strClusteringKeyValue);
 
         Table tableInstance = (Table) deserialize(strTableName);
         Hashtable<String, Object> htblEntryKey = new Hashtable<>();
         htblEntryKey.put(strClusteringKeyName, objClusteringKeyValue);
-        tableInstance.fnUpdateEntry(htblEntryKey,htblColNameValue);
+        tableInstance.updateEntry(htblEntryKey,htblColNameValue);
 
         // index part
 
@@ -164,9 +166,9 @@ public class DBApp {
         }
         vecOfPairs = vec;
         Table tableInstance = (Table) deserialize(strTableName);
-        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
+        String strClusteringKeyName = Meta.getTableClusteringKey(strTableName);
         if(htblColNameValue.containsKey(strClusteringKeyName)){
-            Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
+            Entry entryInstance = tableInstance.searchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
             if (entryInstance != null && entryInstance.equals(htblColNameValue))vecResults.add(entryInstance);
         }
         else{
@@ -186,7 +188,7 @@ public class DBApp {
                 Index indexInstance = (Index) deserialize(vecOfPairs.get(0).strIndexName);
                 Vector<Pair> vecOfSubResults = indexInstance.search((Comparable)htblColNameValue.get(vecOfPairs.get(0).strColumnName));
                 for(Pair pair:vecOfSubResults) {
-                    Entry entry = tableInstance.fnSearchInPageWithClusteringKey(pair);
+                    Entry entry = tableInstance.searchInPageWithClusteringKey(pair);
                     if (entry.equals(htblColNameValue)) {
                         vecResults.add(entry);
                     }
@@ -196,12 +198,12 @@ public class DBApp {
         for(PairOfIndexColName pair:vecOfPairs) {
             Index indexInstance = (Index) deserialize(pair.strIndexName);
             for(Entry entry : vecResults){
-                indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
+                indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.getClusteringKeyValue());
             }
             serialize(indexInstance,pair.strIndexName);
         }
         for(Entry entry: vecResults) {
-            tableInstance.fnDeleteEntry(entry);
+            tableInstance.deleteEntry(entry);
         }
         serialize(tableInstance, strTableName);
     }
@@ -426,13 +428,18 @@ public class DBApp {
 
     public static void removeTable(String strTableName) {
         Table table = (Table) deserialize(strTableName);
-        for (String page : table.vecPages) {
-            File file = new File(page + ".class");
+        try {
+            for (String page : table.vecPages) {
+                File file = new File(page + ".class");
+                file.delete();
+            }
+            Meta.deleteTableMetaData(strTableName);
+            File file = new File(strTableName + ".class");
             file.delete();
         }
-        Meta.deleteTableMetaData(strTableName);
-        File file = new File(strTableName + ".class");
-        file.delete();
+        catch (Exception e){
+            System.out.println(e.getMessage());
+        }
     }
     /**
      * Clears all data from a table.
@@ -449,6 +456,12 @@ public class DBApp {
         table.clear();
         serialize(table, strTableName);
     }
+    /**
+     * Clears all indexes in a given table.
+     *
+     * @param strTableName The name of the table to clear.
+     * @throws DBAppException if an error occurs during index recreation.
+     */
 
     public void clearIndexes(String strTableName) throws DBAppException {
         Vector<PairOfIndexColName> vec = Meta.getIndexesNamesInTable(strTableName);
