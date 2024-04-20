@@ -38,7 +38,7 @@ public class Table implements Serializable{
         int iPageNumber = fnGetPageLocation((Comparable) htblColNameValue.get(this.strClusteringKeyColumn));
         if (iPageNumber == - 1) iPageNumber = 0;
         Entry entryInstance = new Entry(htblColNameValue, this.strClusteringKeyColumn);
-        Hashtable<String, String> colIndicesNames = Meta.fnMapColumnToIndexName(strTableName);
+        Hashtable<String, String> colIndicesNames = Meta.mapColumnToIndexName(strTableName);
         Hashtable<String, Index> colIndices = new Hashtable<>();
         for (String colName: colIndicesNames.keySet()){
             colIndices.put(colName, (Index) DBApp.deserialize(colIndicesNames.get(colName)));
@@ -203,8 +203,8 @@ public class Table implements Serializable{
     public void fnUpdateTableIndecies(Entry e ,Hashtable<String, Object> htblColNameValue) throws DBAppException {
 
         for(String strColName: htblColNameValue.keySet()){
-            if(Meta.fnHaveColumnIndex(this.strTableName, strColName)){
-                String strIndexName = Meta.fnGetColumnIndex(this.strTableName, strColName);
+            if(Meta.haveColumnIndex(this.strTableName, strColName)){
+                String strIndexName = Meta.getColumnIndex(this.strTableName, strColName);
                 Index idx = (Index) DBApp.deserialize(strIndexName);
                 Object objOldKey = e.getColumnValue(strColName);
                 Object objKnewValue = htblColNameValue.get(strColName);

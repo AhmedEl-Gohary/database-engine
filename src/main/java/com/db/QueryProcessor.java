@@ -16,8 +16,8 @@ public final class QueryProcessor {
         Table tableInstance = (Table) DBApp.deserialize(sqlTerm._strTableName);
         if (!sqlTerm._strOperator.equals("!=") && sqlTerm._strColumnName.equals(tableInstance.strClusteringKeyColumn)) {
             return clusteringQueries(sqlTerm, tableInstance);
-        } else if (!sqlTerm._strOperator.equals("!=") && Meta.fnHaveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
-            Index index = (Index) DBApp.deserialize(Meta.fnGetColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName));
+        } else if (!sqlTerm._strOperator.equals("!=") && Meta.haveColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName)) {
+            Index index = (Index) DBApp.deserialize(Meta.getColumnIndex(sqlTerm._strTableName, sqlTerm._strColumnName));
             return indexQueries(sqlTerm, index);
         } else {
             return linearScanning(sqlTerm, tableInstance);
@@ -75,7 +75,7 @@ public final class QueryProcessor {
         for (String strPageName : tableInstance.vecPages) {
             Page page = (Page) DBApp.deserialize(strPageName);
             for (Entry entry : page.vecTuples) {
-                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColType = Meta.getColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
                 String strColValue = (String) (sqlTerm._objValue.toString());
                 DBApp.makeInstance(strColType, strColValue);
                 if (evaluateCondition(entry.getHtblTuple().get(sqlTerm._strColumnName),sqlTerm._strOperator,sqlTerm._objValue)) {
@@ -141,7 +141,7 @@ public final class QueryProcessor {
                 if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
                     return filteredResults;
                 }
-                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColType = Meta.getColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
                 String strColValue = (String) (sqlTerm._objValue.toString());
                 DBApp.makeInstance(strColType, strColValue);
                 filteredResults.add(entry);
@@ -158,7 +158,7 @@ public final class QueryProcessor {
                 if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
                     return filteredResults;
                 }
-                String strColType = Meta.fnGetColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
+                String strColType = Meta.getColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
                 String strColValue = (String) (sqlTerm._objValue.toString());
                 DBApp.makeInstance(strColType, strColValue);
                 filteredResults.add(entry);

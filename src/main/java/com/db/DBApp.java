@@ -48,9 +48,9 @@ public class DBApp {
     public void createIndex(String strTableName, String strColName, String strIndexName) throws DBAppException {
         if (!isExistingFile(strTableName))
             throw new DBAppException("This table doesn't exist!");
-        if (!Meta.fnCheckTableColumn(strTableName, strColName))
+        if (!Meta.checkTableColumn(strTableName, strColName))
             throw new DBAppException("There are no columns with this name in the table!");
-        String strColumnType = Meta.fnGetColumnType(strTableName, strColName);
+        String strColumnType = Meta.getColumnType(strTableName, strColName);
         String[] tokens = strColumnType.split("\\.");
         Index index;
         if (tokens[2].equals("Double")) {
@@ -88,8 +88,8 @@ public class DBApp {
         if (Meta.checkClusteringKey(strTableName, htblColNameValue))
             throw new DBAppException("Cannot Update Clustering Key");
         Meta.checkTableColumns(strTableName, htblColNameValue);
-        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
-        String strClusteringKeyType = Meta.fnGetColumnType(strTableName , strClusteringKeyName);
+        String strClusteringKeyName = Meta.getTableClusteringKey(strTableName);
+        String strClusteringKeyType = Meta.getColumnType(strTableName , strClusteringKeyName);
         Object objClusteringKeyValue = makeInstance(strClusteringKeyType, strClusteringKeyValue);
 
         Table tableInstance = (Table) deserialize(strTableName);
@@ -127,7 +127,7 @@ public class DBApp {
         }
         vecOfPairs = vec;
         Table tableInstance = (Table) deserialize(strTableName);
-        String strClusteringKeyName = Meta.fnGetTableClusteringKey(strTableName);
+        String strClusteringKeyName = Meta.getTableClusteringKey(strTableName);
         if(htblColNameValue.containsKey(strClusteringKeyName)){
             Entry entryInstance = tableInstance.fnSearchEntryWithClusteringKey(htblColNameValue,strClusteringKeyName);
             if (entryInstance != null && entryInstance.equals(htblColNameValue))vecResults.add(entryInstance);
