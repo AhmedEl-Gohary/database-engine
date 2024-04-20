@@ -5,8 +5,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-// TODO: decide on how to compare Strings
-
 public class DBApp {
 
     static String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
@@ -215,25 +213,65 @@ public class DBApp {
             dbApp.createTable(strTableName,"id",htblColNameType);
             HashSet<Integer> hs = new HashSet<>();
             Hashtable<String,Object> ht = new Hashtable<>();
-            ht.put("name", new String("yasser"));
+            ht.put("name", new String("aa"));
             ht.put("id", new Integer(1));
-            ht.put("gpa", new Double(0.9));
+            ht.put("gpa", new Double(1));
             dbApp.insertIntoTable(strTableName, ht);
-            ht.put("name", "tawfik");
+            ht.put("name", "ab");
             ht.put("id", new Integer(2));
+            ht.put("gpa", new Double(2));
+            dbApp.insertIntoTable(strTableName, ht);
+            dbApp.createIndex(strTableName,"id","tawfik");
+            ht.put("name", new String("ac"));
+            ht.put("id", new Integer(3));
             ht.put("gpa", new Double(3));
             dbApp.insertIntoTable(strTableName, ht);
-            dbApp.createIndex(strTableName,"name","yasser");
-            ht.put("name", new String("yasser"));
+            ht.put("name", new String("ad"));
             ht.put("id", new Integer(4));
-            ht.put("gpa", new Double(2));
+            ht.put("gpa", new Double(4));
             dbApp.insertIntoTable(strTableName, ht);
-            ht.put("name", new String("ali"));
+            ht.put("name", new String("ae"));
             ht.put("id", new Integer(5));
-            ht.put("gpa", new Double(2));
+            ht.put("gpa", new Double(5));
+            dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", new String("af"));
+            ht.put("id", new Integer(6));
+            ht.put("gpa", new Double(6));
+            dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", new String("ag"));
+            ht.put("id", new Integer(7));
+            ht.put("gpa", new Double(7));
+            dbApp.insertIntoTable(strTableName, ht);
+            ht.put("name", new String("ah"));
+            ht.put("id", new Integer(8));
+            ht.put("gpa", new Double(8));
+            ht.put("name", new String("ai"));
+            ht.put("id", new Integer(8));
+            ht.put("gpa", new Double(8));
             dbApp.insertIntoTable(strTableName, ht);
             Table table= (Table) deserialize(strTableName);
             System.out.println(table);
+            SQLTerm[] arrSQLTerms = new SQLTerm[3];
+            String[] strarrOperators = new String[2];
+            arrSQLTerms[0] = new SQLTerm();
+            arrSQLTerms[1] = new SQLTerm();
+            arrSQLTerms[2] = new SQLTerm();
+            arrSQLTerms[0]._strTableName = "Student";
+            arrSQLTerms[0]._strColumnName = "gpa";
+            arrSQLTerms[0]._strOperator = "<=";
+            arrSQLTerms[0]._objValue = new Double(4);
+            arrSQLTerms[1]._strTableName = "Student";
+            arrSQLTerms[1]._strColumnName = "gpa";
+            arrSQLTerms[1]._strOperator = "<=";
+            arrSQLTerms[1]._objValue = new Double(7);
+            arrSQLTerms[2]._strTableName = "Student";
+            arrSQLTerms[2]._strColumnName = "gpa";
+            arrSQLTerms[2]._strOperator = ">=";
+            arrSQLTerms[2]._objValue = new Double(5);
+            strarrOperators[0] = "OR";
+            strarrOperators[1] = "AND";
+            System.out.println(dbApp.selectFromTable(arrSQLTerms,strarrOperators));
+
         } catch (Throwable e) {
             e.printStackTrace();
         }finally {
