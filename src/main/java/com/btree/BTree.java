@@ -1,8 +1,6 @@
 package com.btree;
 
 
-import java.util.Vector;
-
 /**
  * A B+ tree
  * Since the structures and behaviors between internal node and external node are different,
@@ -17,9 +15,9 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
         this.root = new BTreeLeafNode<TKey, TValue>();
     }
 
-    public String getTreeStructure(TKey minKey){
+    public String getTreeStructure(){
         StringBuilder st = new StringBuilder();
-        BTreeLeafNode<TKey, TValue> curNode = findLeafNodeShouldContainKey(minKey);
+        BTreeLeafNode<TKey, TValue> curNode = findMinInTreeNode();
          while(curNode != null){
              st.append(curNode );
              curNode = (BTreeLeafNode<TKey, TValue>) curNode.rightSibling;
@@ -84,7 +82,6 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
                 node = ((BTreeInnerNode<TKey>)node).findLeftElement();
             else break;
         }
-
         return ((BTreeLeafNode<TKey,TValue>)node).getFirstValue();
     }
     public TValue findMaxInTree(){
@@ -107,7 +104,6 @@ public class BTree<TKey extends Comparable<TKey>, TValue> implements java.io.Ser
                 node = ((BTreeInnerNode<TKey>)node).findRightElement();
             else break;
         }
-
 
         return ((BTreeLeafNode<TKey,TValue>)node);
     }
