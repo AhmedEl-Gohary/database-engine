@@ -96,20 +96,7 @@ public class DBApp {
         tableInstance.fnUpdateEntry(htblEntryKey,htblColNameValue);
 
         // index part
-        Hashtable<String,String> htblColumnIndexName = Meta.fnMapColumnToIndexName(strTableName);
-        for(String strColName:htblColNameValue.keySet()){
-            if(!htblColumnIndexName.get(strColName).equals("null")){
-                Index indexInstance = (Index) fnDeserialize(htblColumnIndexName.get(strColName));
-                Comparable key = (Comparable) tableInstance.
-                        fnSearchEntryWithClusteringKey(htblEntryKey,strClusteringKeyName).
-                        getColumnValue(strColName);
-                Vector<Pair> toBeChanged = indexInstance.delete(key,(Comparable) objClusteringKeyValue);
-                for (Pair pair : toBeChanged) {
-                    indexInstance.insert((Comparable)htblColNameValue.get(strColName),pair);
-                }
-                fnSerialize(indexInstance,htblColumnIndexName.get(strColName));
-            }
-        }
+
         fnSerialize(tableInstance, strTableName);
     }
     // name = "ahmed" and age = 20 and gender = "male"
