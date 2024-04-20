@@ -8,6 +8,8 @@ package com.db;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class DBApp {
@@ -24,7 +26,7 @@ public class DBApp {
     /**
      * Constructs a DBApp object and initializes the application.
      */
-    public DBApp() {
+    public DBApp() throws IOException {
         init();
     }
 
@@ -32,13 +34,13 @@ public class DBApp {
      * Initializes the application by loading configuration properties.
      */
 
-    public void init( ){
+    public void init( ) throws IOException {
         String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
         String appConfigPath = rootPath + "DBApp.config";
         Properties p = new Properties();
         try {
             p.load(new FileInputStream(appConfigPath));
-        }catch (IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         Page.iMaxRowsCount = Integer.parseInt(p.getProperty("MaximumRowsCountinPage"));
@@ -108,7 +110,7 @@ public class DBApp {
     }
 
 
-     /**
+    /**
      * Updates a row in the specified table.
      *
      * @param strTableName The name of the table.
@@ -196,7 +198,7 @@ public class DBApp {
         for(PairOfIndexColName pair:vecOfPairs) {
             Index indexInstance = (Index) deserialize(pair.strIndexName);
             for(Entry entry : vecResults){
-                indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.fnEntryID());
+                indexInstance.delete((Comparable) entry.getColumnValue(pair.strColumnName), entry.getClusteringKeyValue());
             }
             serialize(indexInstance,pair.strIndexName);
         }
@@ -426,13 +428,18 @@ public class DBApp {
 
     public static void removeTable(String strTableName) {
         Table table = (Table) deserialize(strTableName);
-        for (String page : table.vecPages) {
-            File file = new File(page + ".class");
+        try {
+            for (String page : table.vecPages) {
+                File file = new File(page + ".class");
+                file.delete();
+            }
+            Meta.deleteTableMetaData(strTableName);
+            File file = new File(strTableName + ".class");
             file.delete();
         }
-        Meta.deleteTableMetaData(strTableName);
-        File file = new File(strTableName + ".class");
-        file.delete();
+        catch (Exception e){
+            System.out.println(e.getMessage());
+        }
     }
     /**
      * Clears all data from a table.
@@ -449,6 +456,12 @@ public class DBApp {
         table.clear();
         serialize(table, strTableName);
     }
+    /**
+     * Clears all indexes in a given table.
+     *
+     * @param strTableName The name of the table to clear.
+     * @throws DBAppException if an error occurs during index recreation.
+     */
 
     public void clearIndexes(String strTableName) throws DBAppException {
         Vector<PairOfIndexColName> vec = Meta.getIndexesNamesInTable(strTableName);

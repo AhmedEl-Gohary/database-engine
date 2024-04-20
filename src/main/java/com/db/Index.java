@@ -47,7 +47,7 @@ public class Index<TKey extends Comparable<TKey>> implements Serializable {
     private void addPage(String strPageName) {
         Page pageInstance = (Page) DBApp.deserialize(strPageName);
         for (Entry entry : pageInstance.vecTuples) {
-            Comparable clusteringKey = (Comparable) entry.fnEntryID();
+            Comparable clusteringKey = (Comparable) entry.getClusteringKeyValue();
             TKey key = (TKey) entry.getColumnValue(strIndexColumn);
             insert(key, new Pair(clusteringKey, pageInstance.fnGetPageName()));
         }

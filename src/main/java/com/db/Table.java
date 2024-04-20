@@ -78,11 +78,11 @@ public class Table implements Serializable{
                 Object value = entryInstance.getColumnValue(colName);
                 Index index = colIndices.get(colName);
                 if (value != null) {
-                    index.updatePage((Comparable) value, entryInstance.fnEntryID(), pageInstance.fnGetPageName());
+                    index.updatePage((Comparable) value, entryInstance.getClusteringKeyValue(), pageInstance.fnGetPageName());
                 }
             }
             entryInstance = pageInstance.fnInsertEntry(entryInstance);
-            vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
+            vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().getClusteringKeyValue());
             DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
             iPageNumber++;
         }
@@ -198,7 +198,7 @@ public class Table implements Serializable{
      * @param entry The entry to delete.
      */
     public void deleteEntry(Entry entry){
-        int iPageNumber = getPageLocation(entry.fnEntryID());
+        int iPageNumber = getPageLocation(entry.getClusteringKeyValue());
         Page pageInstance = (Page) DBApp.deserialize(vecPages.get(iPageNumber));
         int iEntryIdx = Collections.binarySearch(pageInstance.vecTuples, entry);
         if (iEntryIdx >= 0){
@@ -210,7 +210,7 @@ public class Table implements Serializable{
             vecMin.remove(iPageNumber);
             vecCountRows.remove(iPageNumber);
         } else{
-            vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().fnEntryID());
+            vecMin.set(iPageNumber, pageInstance.vecTuples.firstElement().getClusteringKeyValue());
             vecCountRows.set(iPageNumber , vecCountRows.get(iPageNumber ) - 1);
             DBApp.serialize(pageInstance, vecPages.get(iPageNumber));
         }
@@ -267,7 +267,7 @@ public class Table implements Serializable{
                 Index idx = (Index) DBApp.deserialize(strIndexName);
                 Object objOldKey = e.getColumnValue(strColName);
                 Object objKnewValue = htblColNameValue.get(strColName);
-                idx.update((Comparable) objOldKey, e.fnEntryID(), (Comparable)objKnewValue);
+                idx.update((Comparable) objOldKey, e.getClusteringKeyValue(), (Comparable)objKnewValue);
                 DBApp.serialize(idx, strIndexName);
             }
         }

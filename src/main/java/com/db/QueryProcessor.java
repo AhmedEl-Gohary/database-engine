@@ -162,10 +162,10 @@ public final class QueryProcessor {
         int l = 0, r = N - 1;
         while (l <= r) {
             int mid = l + r >> 1;
-            if (entries.get(mid).fnEntryID().equals(id)) {
+            if (entries.get(mid).getClusteringKeyValue().equals(id)) {
                 return mid;
             }
-            if (entries.get(mid).fnEntryID().compareTo(id) > 0) {
+            if (entries.get(mid).getClusteringKeyValue().compareTo(id) > 0) {
                 r = mid - 1;
             } else {
                 l = mid + 1;
@@ -211,7 +211,7 @@ public final class QueryProcessor {
             Page page = (Page) DBApp.deserialize(tableInstance.vecPages.get(i));
             for (int j = page.vecTuples.size() - 1; j >= 0; j--) {
                 Entry entry = page.vecTuples.get(j);
-                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                if (!evaluateCondition(entry.getClusteringKeyValue(), sqlTerm._strOperator, sqlTerm._objValue)) {
                     return filteredResults;
                 }
                 String strColType = Meta.getColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
@@ -236,7 +236,7 @@ public final class QueryProcessor {
         for (String strPageName : tableInstance.vecPages) {
             Page page = (Page) DBApp.deserialize(strPageName);
             for (Entry entry : page.vecTuples) {
-                if (!evaluateCondition(entry.fnEntryID(), sqlTerm._strOperator, sqlTerm._objValue)) {
+                if (!evaluateCondition(entry.getClusteringKeyValue(), sqlTerm._strOperator, sqlTerm._objValue)) {
                     return filteredResults;
                 }
                 String strColType = Meta.getColumnType(sqlTerm._strTableName, sqlTerm._strColumnName);
